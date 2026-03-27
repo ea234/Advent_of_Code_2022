@@ -11,6 +11,16 @@ import * as readline from 'readline';
  * 
  * Day 08 - Treetop Tree House
  * 
+ *    R1C1 5 is_visible 2 -> Right 1  Left 1  Above 1  Below 1 = Score 1
+ *    R1C2 5 is_visible 2 -> Right 2  Left 1  Above 1  Below 2 = Score 4
+ *    R1C3 1 is_visible 0 -> Right 1  Left 1  Above 1  Below 1 = Score 1
+ *    R2C1 5 is_visible 1 -> Right 3  Left 1  Above 1  Below 2 = Score 6
+ *    R2C2 3 is_visible 0 -> Right 1  Left 1  Above 1  Below 1 = Score 1
+ *    R2C3 3 is_visible 1 -> Right 1  Left 1  Above 2  Below 1 = Score 2
+ *    R3C1 3 is_visible 0 -> Right 1  Left 1  Above 1  Below 1 = Score 1
+ *    R3C2 5 is_visible 2 -> Right 2  Left 2  Above 2  Below 1 = Score 8
+ *    R3C3 4 is_visible 0 -> Right 1  Left 1  Above 3  Below 1 = Score 3
+ * 
  *      01234        01234
  * 
  *   0  30373     0  .....
@@ -19,20 +29,20 @@ import * as readline from 'readline';
  *   3  33549     3  ..1..
  *   4  35390     4  .....
  * 
+ * 
  * Infield Visibility  5
  * Outfield Visibility 16
  * 
  * Result Part 1 = 21
- * Result Part 2 = 0
+ * Result Part 2 = 8
  * 
  * Day 08 - Ende
- * 
- * 
  */
 
 type TreeMap = Record< string, number >; 
 
 const STR_COMBINE_SPACER                 : string = "   "; 
+
 
 function wl( pString : string ) // wl = short for "writeLog"
 {
@@ -74,7 +84,7 @@ function combineStrings( pString1: string | undefined | null, pString2: string |
 }
 
 
-function getDebugMap( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number  ) : string 
+function getDebugMap( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number ): string 
 {
     let str_result : string = "";
 
@@ -103,18 +113,25 @@ function getDebugMap( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number  
 }
 
 
-function getVisibilityNumberPart1( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number, pRow : number, pCol : number ) : number
+function getVisibilityNumbers( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number, pRow : number, pCol : number, pKnzDebug : boolean ) : { is_visible : number, visibility_value : number }
 {
-    let number_check : number = pHashMap[ "R" + pRow + "C" + pCol ]!;
+    let number_check         : number = pHashMap[ "R" + pRow + "C" + pCol ]!;
 
     let knz_is_visible_right : number = 1;
     let knz_is_visible_left  : number = 1;
     let knz_is_visible_above : number = 1;
     let knz_is_visible_below : number = 1;
 
+    let value_visible_right  : number = 0;
+    let value_visible_left   : number = 0;
+    let value_visible_above  : number = 0;
+    let value_visible_below  : number = 0;
+
     for ( let cur_col = pCol + 1; ( cur_col < pMaxCols ) && ( knz_is_visible_right === 1 ); cur_col++ )
     {
         let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
+
+        value_visible_right++;
 
         if ( number_cur >= number_check )
         {
@@ -126,6 +143,8 @@ function getVisibilityNumberPart1( pHashMap : TreeMap, pMaxRows : number, pMaxCo
     {
         let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
 
+        value_visible_left++;
+
         if ( number_cur >= number_check )
         {
             knz_is_visible_left = 0;
@@ -135,6 +154,8 @@ function getVisibilityNumberPart1( pHashMap : TreeMap, pMaxRows : number, pMaxCo
     for ( let cur_row = pRow - 1; ( cur_row >= 0 ) && ( knz_is_visible_above === 1 ); cur_row-- )
     {
         let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
+
+        value_visible_above++;
 
         if ( number_cur >= number_check )
         {
@@ -146,94 +167,28 @@ function getVisibilityNumberPart1( pHashMap : TreeMap, pMaxRows : number, pMaxCo
     {
         let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
 
-        if ( number_cur >= number_check )
-        {
-            knz_is_visible_below = 0;
-        }
-    }
-
-    return knz_is_visible_above + knz_is_visible_below + knz_is_visible_left + knz_is_visible_right;
-}
-
-
-function getVisibilityNumberPart2( pHashMap : TreeMap, pMaxRows : number, pMaxCols : number, pRow : number, pCol : number ) : number
-{
-    let number_check : number = pHashMap[ "R" + pRow + "C" + pCol ]!;
-
-    let knz_is_visible_right : number = 1;
-    let knz_is_visible_left  : number = 1;
-    let knz_is_visible_above : number = 1;
-    let knz_is_visible_below : number = 1;
-
-
-    let value_visible_right : number = 1;
-    let value_visible_left  : number = 1;
-    let value_visible_above : number = 1;
-    let value_visible_below : number = 1;
-
-    for ( let cur_col = pCol + 1; ( cur_col < pMaxCols ) && ( knz_is_visible_right === 1 ); cur_col++ )
-    {
-        let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
-
-        if ( number_cur >= number_check )
-        {
-            knz_is_visible_right = 0;
-        }
-        else
-        {
-          value_visible_right++;
-        }
-    }
-
-    for ( let cur_col = pCol - 1; ( cur_col >= 0 ) && ( knz_is_visible_left === 1 ); cur_col-- )
-    {
-        let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
-
-        if ( number_cur >= number_check )
-        {
-            knz_is_visible_left = 0;
-        }
-        else
-        {
-          value_visible_left++;
-        }
-
-    }
-
-    for ( let cur_row = pRow - 1; ( cur_row >= 0 ) && ( knz_is_visible_above === 1 ); cur_row-- )
-    {
-        let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
-
-        if ( number_cur >= number_check )
-        {
-            knz_is_visible_above = 0;
-        }
-        else
-        {
-          value_visible_above++;
-        }
-    }
-
-    for ( let cur_row = pRow + 1; ( cur_row < pMaxRows ) && ( knz_is_visible_below === 1 ); cur_row++ )
-    {
-        let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
+        value_visible_below++;
 
         if ( number_cur >= number_check )
         {
             knz_is_visible_below = 0;
         }
-        else
-        {
-          value_visible_below++;
-        }
-
     }
 
-    return value_visible_right * value_visible_left * value_visible_above * value_visible_below;
+    let visibility_value : number = value_visible_right * value_visible_left * value_visible_above * value_visible_below;
+
+    let is_visible       : number = knz_is_visible_above + knz_is_visible_below + knz_is_visible_left + knz_is_visible_right
+
+    if ( pKnzDebug )
+    {
+        wl( pad( "R" + pRow + "C" + pCol, 7 ) + " " + number_check + " is_visible " + is_visible + " -> Right " + value_visible_right  + "  Left " + value_visible_left   + "  Above " + value_visible_above  + "  Below " + value_visible_below + " = Score " + visibility_value);
+    }
+
+    return { is_visible : is_visible, visibility_value : visibility_value }
 }
 
 
-function calcArray( pArray: string[], pKnzDebug : boolean = true ): void 
+function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void 
 {
     /*
      * *******************************************************************************************************
@@ -267,7 +222,7 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ): void
 
     /*
      * *******************************************************************************************************
-     * Calculating Part 1
+     * Calculating Part 1 and 2
      * *******************************************************************************************************
      */
 
@@ -277,32 +232,22 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ): void
 
     let map_visibility  : TreeMap = {};
 
-    let map_visibility_p2  : TreeMap = {};
-
     for ( let cur_row = 1; cur_row < ( grid_rows - 1 ); cur_row++ )
     {
         for ( let cur_col = 1; cur_col < ( grid_cols - 1 ); cur_col++ )
         {
-            let visibility_number_p1 = getVisibilityNumberPart1( map_input, grid_rows, grid_cols, cur_row, cur_col );
+            let res_vis : { is_visible : number, visibility_value : number } = getVisibilityNumbers( map_input, grid_rows, grid_cols, cur_row, cur_col, pKnzDebug );
 
-            let visibility_number_p2 = getVisibilityNumberPart2( map_input, grid_rows, grid_cols, cur_row, cur_col );
-
-            map_visibility_p2[ "R" + cur_row + "C" + cur_col ] = visibility_number_p2;
-
-            if ( visibility_number_p2 > result_part_02 )
+            if ( res_vis.visibility_value > result_part_02 )
             {
-                result_part_02 += visibility_number_p2;
+                result_part_02 = res_vis.visibility_value;
             }
 
-            if ( visibility_number_p1 > 0 )
+            if ( res_vis.is_visible > 0 )
             {
                 infield_number += 1;
 
                 map_visibility[ "R" + cur_row + "C" + cur_col ] = 1;
-            }
-            else 
-            {
-                //map_visib[ "R" + cur_row + "C" + cur_col ] = 0;
             }
         }
     }
@@ -364,7 +309,7 @@ function checkReaddatei() : void
 }
 
 
-function getTestArray1(): string[] 
+function getTestArray1() : string[] 
 {
     const array_test: string[] = [];
     
