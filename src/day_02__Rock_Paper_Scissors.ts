@@ -1,6 +1,11 @@
 import { promises as fs } from 'fs';
-import { pid } from 'process';
 import * as readline from 'readline';
+
+/*
+ * https://adventofcode.com/2022/day/2
+ *
+ * https://www.reddit.com/r/adventofcode/comments/zac2v2/2022_day_2_solutions/
+ */
 
 const ROCK_G        : string = "Rock";
 const PAPER_G       : string = "Paper";
@@ -31,26 +36,21 @@ function wl( pString : string )
 
 function translateX( pInput : string ) : string 
 {
-    if ( pInput === ROCK_A ) return ROCK_G;
-    if ( pInput === PAPER_B ) return PAPER_G;
+    if ( pInput === ROCK_A    ) return ROCK_G;
+    if ( pInput === PAPER_B   ) return PAPER_G;
     if ( pInput === SICCORS_C ) return SICCORS_G;
 
-    if ( pInput === ROCK_X ) return ROCK_G;
-    if ( pInput === PAPER_Y ) return PAPER_G;
+    if ( pInput === ROCK_X    ) return ROCK_G;
+    if ( pInput === PAPER_Y   ) return PAPER_G;
     if ( pInput === SICCORS_Z ) return SICCORS_G;
 
     return "unknown";
 }
 
 
-// 
-
-// and  Good luck!"
-
 function checkRound2( pPlayerA : string, pIndicator : string ) : string 
 {
     const shape_player_a = translateX( pPlayerA );
-
 
     if ( pIndicator === "Y" )
     {
@@ -111,6 +111,7 @@ function checkWinPlayerA( pPlayerA : string, pPlayerB : string ) : number
 
     if ( ( shape_player_a == PAPER_G   ) && ( shape_player_b == ROCK_G    ) ) return PAPER_VALUE + VALUE_WON;
 
+
     if ( shape_player_a == ROCK_G    ) return ROCK_VALUE;
 
     if ( shape_player_a == PAPER_G   ) return PAPER_VALUE;
@@ -121,7 +122,7 @@ function checkWinPlayerA( pPlayerA : string, pPlayerB : string ) : number
 }
 
 
-function calcArray( pArray: string[], pKnzDebug : boolean = true ): void 
+function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void 
 {
     let result_part_01 : number = 0;
     let result_part_02 : number = 0;
@@ -154,7 +155,7 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ): void
 }
 
 
-async function readFileLines(): Promise<string[]> 
+async function readFileLines() : Promise<string[]> 
 {
     const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day02_input.txt";
 
@@ -178,7 +179,7 @@ async function readFileLines(): Promise<string[]>
 }
 
 
-function checkReaddatei(): void 
+function checkReaddatei() : void 
 {
     ( async () => {
 

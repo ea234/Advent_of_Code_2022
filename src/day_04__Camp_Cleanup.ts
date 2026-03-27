@@ -3,6 +3,8 @@ import * as readline from 'readline';
 
 /*
  * https://adventofcode.com/2022/day/4
+ * 
+ * https://www.reddit.com/r/adventofcode/comments/zc0zta/2022_day_4_solutions/
  */
 
 function wl( pString : string )
@@ -76,7 +78,7 @@ function checkOverlappingPart2( pFromA : number, pToA : number, pFromB : number,
 }
 
 
-function calcArray( pArray: string[], pKnzDebug : boolean = true ): void 
+function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void 
 {
     let result_part_01 : number = 0;
     let result_part_02 : number = 0;
@@ -110,7 +112,7 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ): void
 }
 
 
-async function readFileLines(): Promise<string[]> 
+async function readFileLines() : Promise<string[]> 
 {
     const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day04_input.txt";
 
@@ -133,7 +135,7 @@ async function readFileLines(): Promise<string[]>
 }
 
 
-function checkReaddatei(): void 
+function checkReaddatei() : void 
 {
     ( async () => {
 

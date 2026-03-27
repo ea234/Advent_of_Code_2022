@@ -172,7 +172,7 @@ function moveStackPart01( pCrateStacks : Record< string, CrateStack >, pAmount :
 }
 
 
-function moveStackPart02( pCrateStacks : Record< string, CrateStack >, pAmount : number, pFrom : number, pTo :number  ) : void 
+function moveStackPart02( pCrateStacks : Record< string, CrateStack >, pAmount : number, pFrom : number, pTo : number ) : void 
 {
     let pop_string_vector : string[] = pCrateStacks[ pFrom ]!.popStringVector( pAmount )!;
 
@@ -203,7 +203,7 @@ function getPeekString( pCrateStacks : Record< string, CrateStack >, pIndexVecto
 }
 
 
-function calcArray( pArray: string[], pKnzCalcPart02 : boolean = false, pKnzDebug : boolean = true ): void 
+function calcArray( pArray: string[], pKnzCalcPart02 : boolean = false, pKnzDebug : boolean = true ) : void 
 {
     let index_empty_row : number = 0;
 
@@ -296,7 +296,7 @@ function calcArray( pArray: string[], pKnzCalcPart02 : boolean = false, pKnzDebu
      * *******************************************************************************************************
      */
 
-    for ( let index_input = (index_empty_row + 1); index_input < pArray.length; index_input++ )
+    for ( let index_input = ( index_empty_row + 1 ); index_input < pArray.length; index_input++ )
     {
         let cur_line_input     : string = pArray[ index_input ]!;
 
@@ -335,7 +335,7 @@ function calcArray( pArray: string[], pKnzCalcPart02 : boolean = false, pKnzDebu
     
     for ( let index_stack = 0; index_stack < index_cargo_col.length; index_stack++ )
     {
-        if (( index_cargo_col[ index_stack ] !== undefined ) && ( index_cargo_col[ index_stack ]! > 0 ) )
+        if ( ( index_cargo_col[ index_stack ] !== undefined ) && ( index_cargo_col[ index_stack ]! > 0 ) )
         {
             wl( crate_stacks[ index_stack ]!.toString() ); 
         }
@@ -354,7 +354,7 @@ function calcArray( pArray: string[], pKnzCalcPart02 : boolean = false, pKnzDebu
 }
 
 
-async function readFileLines(): Promise<string[]> 
+async function readFileLines() : Promise<string[]> 
 {
     const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day05_input.txt";
 
@@ -377,7 +377,7 @@ async function readFileLines(): Promise<string[]>
 }
 
 
-function checkReaddatei(): void 
+function checkReaddatei() : void 
 {
     ( async () => {
 

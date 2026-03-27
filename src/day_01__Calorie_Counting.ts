@@ -3,6 +3,8 @@ import * as readline from 'readline';
 
 /*
  * https://adventofcode.com/2022/day/1
+ *
+ * https://www.reddit.com/r/adventofcode/comments/z9ezjb/2022_day_1_solutions/
  */
 
 function wl( pString : string )
@@ -11,7 +13,7 @@ function wl( pString : string )
 }
 
 
-function calcArray( pArray: string[], pKnzDebug : boolean = true ): void 
+function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void 
 {
     let result_part_01      : number = 0;
     let result_part_02      : number = 0;

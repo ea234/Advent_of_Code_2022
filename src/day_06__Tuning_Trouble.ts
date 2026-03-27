@@ -59,7 +59,7 @@ function find4( pString : string ) : number
         let char_3 : string = pString.charAt( index_cur + 2 );
         let char_4 : string = pString.charAt( index_cur + 3 );
 
-        wl( " " + index_cur + " " + char_1 + "  " + char_2 + "  " + char_3 + "  " + char_4 + " ")
+        wl( " " + index_cur + " " + char_1 + "  " + char_2 + "  " + char_3 + "  " + char_4 + " " );
 
         if ( char_1 === char_2 ) continue;
         if ( char_1 === char_3 ) continue;
@@ -95,7 +95,7 @@ function checkForChar( pString : string, pIndexO : number, pMaxIndex : number ) 
 }
 
 
-function findUnique( pString : string, pNumberDistinctCharacters : number, pKnzDebug : boolean  ) : number 
+function findUnique( pString : string, pNumberDistinctCharacters : number, pKnzDebug : boolean ) : number 
 {
     let find_nr            : number = pNumberDistinctCharacters;
 
@@ -118,7 +118,7 @@ function findUnique( pString : string, pNumberDistinctCharacters : number, pKnzD
 
         if ( pKnzDebug )
         {
-            wl( "Index_from " + index_from + " to " + index_to + "  Char from " + pString.charAt( index_from )! + " to " + pString.charAt( index_to )! + " "  )
+            wl( "Index_from " + index_from + " to " + index_to + "  Char from " + pString.charAt( index_from )! + " to " + pString.charAt( index_to )! + " "  );
         }
 
         for ( let start_o = index_from; start_o < index_to; start_o++ )
@@ -129,7 +129,7 @@ function findUnique( pString : string, pNumberDistinctCharacters : number, pKnzD
             {
                 if ( pKnzDebug )
                 {
-                    wl( "Found pair at " + start_o + " " + pString.charAt( start_o ) )
+                    wl( "Found pair at " + start_o + " " + pString.charAt( start_o ) );
                 }
 
                 break;
@@ -161,7 +161,7 @@ function getSubStringR( pString : string, pNumberFrom : number, pCountChars : nu
 }
 
 
-function calcArray( pArray: string[], pKnzDebug : boolean = true ): void 
+function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void 
 {
     let result_part_01 : number = 0;
     let result_part_02 : number = 0;
@@ -189,7 +189,7 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ): void
 }
 
 
-async function readFileLines(): Promise<string[]> 
+async function readFileLines() : Promise<string[]> 
 {
     const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day06_input.txt";
 
@@ -212,7 +212,7 @@ async function readFileLines(): Promise<string[]>
 }
 
 
-function checkReaddatei(): void 
+function checkReaddatei() : void 
 {
     ( async () => {
 
