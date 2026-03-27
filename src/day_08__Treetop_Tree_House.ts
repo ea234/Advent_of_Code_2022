@@ -129,11 +129,9 @@ function getVisibilityNumbers( pHashMap : TreeMap, pMaxRows : number, pMaxCols :
 
     for ( let cur_col = pCol + 1; ( cur_col < pMaxCols ) && ( knz_is_visible_right === 1 ); cur_col++ )
     {
-        let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
-
         value_visible_right++;
 
-        if ( number_cur >= number_check )
+        if ( pHashMap[ "R" + pRow + "C" + cur_col ]! >= number_check )
         {
             knz_is_visible_right = 0;
         }
@@ -141,11 +139,9 @@ function getVisibilityNumbers( pHashMap : TreeMap, pMaxRows : number, pMaxCols :
 
     for ( let cur_col = pCol - 1; ( cur_col >= 0 ) && ( knz_is_visible_left === 1 ); cur_col-- )
     {
-        let number_cur : number = pHashMap[ "R" + pRow + "C" + cur_col ]!;
-
         value_visible_left++;
 
-        if ( number_cur >= number_check )
+        if ( pHashMap[ "R" + pRow + "C" + cur_col ]! >= number_check )
         {
             knz_is_visible_left = 0;
         }
@@ -153,11 +149,9 @@ function getVisibilityNumbers( pHashMap : TreeMap, pMaxRows : number, pMaxCols :
 
     for ( let cur_row = pRow - 1; ( cur_row >= 0 ) && ( knz_is_visible_above === 1 ); cur_row-- )
     {
-        let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
-
         value_visible_above++;
 
-        if ( number_cur >= number_check )
+        if ( pHashMap[ "R" + cur_row + "C" + pCol ]! >= number_check )
         {
             knz_is_visible_above = 0;
         }
@@ -165,11 +159,9 @@ function getVisibilityNumbers( pHashMap : TreeMap, pMaxRows : number, pMaxCols :
 
     for ( let cur_row = pRow + 1; ( cur_row < pMaxRows ) && ( knz_is_visible_below === 1 ); cur_row++ )
     {
-        let number_cur : number = pHashMap[ "R" + cur_row + "C" + pCol ]!;
-
         value_visible_below++;
 
-        if ( number_cur >= number_check )
+        if ( pHashMap[ "R" + cur_row + "C" + pCol ]! >= number_check )
         {
             knz_is_visible_below = 0;
         }
