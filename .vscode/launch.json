@@ -39,7 +39,45 @@
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Day 04 - Camp Cleanup",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/dist/day04/day_04__Camp_Cleanup.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Day 05 - Supply Stacks",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/dist/day05/day_05__Supply_Stacks.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Day 06 - Tuning Trouble",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/dist/day06/day_06__Tuning_Trouble.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
         }
-       
+     
+        
+        
     ]
 }
