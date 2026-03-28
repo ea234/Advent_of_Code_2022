@@ -10,27 +10,44 @@ import { start } from 'repl';
  * /home/ea234/.nvm/versions/node/v20.16.0/bin/node ./dist/day07/day_07__No_Space_Left_On_Device.js
  * Day 07 - No Space Left On Device
  * 
+ * found cd </>
  * + changing to /
- * found cd <dir>     /
+ * found file 14848514 b.txt adding to directory /
+ * found file 8504156 c.dat adding to directory /
+ * found cd <a>
  * + changing from / to a
- * found cd <dir>     a
+ * found file 29116 f adding to directory a
+ * found file 2557 g adding to directory a
+ * found file 62596 h.lst adding to directory a
+ * found cd <e>
  * + changing from a to e
- * found cd <dir>     e
+ * found file 584 i adding to directory e
  * found cd ..
  * - changing from e to a
  * found cd ..
  * - changing from a to /
+ * found cd <d>
  * + changing from / to d
- * found cd <dir>     d
- * /
- *  +a
- *  + +e
- *  +d
+ * found file 4060174 j adding to directory d
+ * found file 8033020 d.log adding to directory d
+ * found file 5626152 d.ext adding to directory d
+ * found file 7214296 k adding to directory d
  * 
- * Result Part 1 = 0
- * Result Part 2 = 0
+ * -- DIR  / 48381165
+ *  +-- DIR  a 94853
+ *  + +-- DIR  e 584
+ *  +-- DIR  d 24933642
+ * 
+ * DIR  / 48381165
+ * DIR  a 94853
+ * DIR  e 584
+ * DIR  d 24933642
+ * 
+ * Result Part 1 = 95437
+ * Result Part 2 = 2
  * 
  * Day 07 - Ende
+ * 
  */
 
 class Day07File
@@ -104,6 +121,11 @@ class Day07Directory
         return undefined;
     }
 
+    public isDirName( pName : string ) : boolean
+    {
+        return this.directory_name === pName;
+    }
+
     public getSubDirByName( pName : string ) : Day07Directory | undefined
     {
         if ( this.directory_name === pName ) 
@@ -113,11 +135,9 @@ class Day07Directory
 
         for ( let sub_dir of this.sub_directorys )
         {
-            let ret_val : Day07Directory | undefined = sub_dir.getSubDirByName( pName );
-
-            if ( ret_val !== undefined )
+            if ( sub_dir.isDirName( pName ) )
             {
-                return ret_val;
+                return sub_dir;
             }
         }
 
@@ -126,7 +146,7 @@ class Day07Directory
 
     public getStrSubDirs(  pPrefix : string = "" ) : string 
     {
-        let str_result : string = pPrefix + this.directory_name + "\n";
+        let str_result : string = pPrefix + "-- " + this.toString() + "\n";
 
         for ( let sub_dir of this.sub_directorys )
         {
@@ -158,7 +178,7 @@ class Day07Directory
         this.directory_files.push( new_file );
     }
 
-    public getFileSizes() : number 
+    public getDirectorySize() : number 
     {
         let file_size : number = 0;
 
@@ -169,7 +189,7 @@ class Day07Directory
 
         for ( let dir_inst of this.sub_directorys )
         {
-            file_size += dir_inst.getFileSizes();
+            file_size += dir_inst.getDirectorySize();
         }
 
         return file_size;
@@ -177,7 +197,7 @@ class Day07Directory
 
     public toString()
     {
-        return "DIR  " + this.getName;
+        return "DIR  " + this.getName() + " " + this.getDirectorySize();
     }
 }
 
@@ -203,18 +223,26 @@ function pad( pInput : string | number, pPadLeft : number ) : string
 
 function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void 
 {
-    let result_part_01      : number = 0;
-    let result_part_02      : number = 0;
+    /*
+     * *******************************************************************************************************
+     * Parsing the input Array. Building the directory structure.
+     * *******************************************************************************************************
+     */
 
-    let start_dir : Day07Directory;
+    let result_part_01 : number = 0;
+    let result_part_02 : number = 0;
 
-    let cur_directory : Day07Directory | undefined;
+    let dir_vec        : Day07Directory[] = [];
+
+    let start_dir      : Day07Directory;
+
+    let cur_directory  : Day07Directory | undefined;
     
     for ( const cur_input_str of pArray ) 
     {
-        if ( cur_input_str === "$ cd ..")
+        if ( cur_input_str === "$ cd .." )
         {
-            wl( "found cd .." )
+            wl( "found cd .." );
 
             if ( cur_directory !== undefined )
             {
@@ -227,23 +255,24 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void
                     cur_directory = new_cur_dir;
                 }
             }
-
         }
-        else if ( cur_input_str.startsWith( "$ cd ") )
+        else if ( cur_input_str.startsWith( "$ cd " ) )
         {
             let dir_name = cur_input_str.substring( 5 ).trim();
 
-            wl( "found cd <" + dir_name + ">" )
+            wl( "found cd <" + dir_name + ">" );
 
             if ( cur_directory !== undefined )
             {
-                let new_cur_dir : Day07Directory = new Day07Directory( dir_name, cur_directory );
+                let new_cur_dir : Day07Directory = new Day07Directory( dir_name, cur_directory ) 
                 
                 cur_directory.addSubDir( new_cur_dir );
 
                 wl( "+ changing from " + cur_directory.getName() + " to " + new_cur_dir.getName() );
 
                 cur_directory = new_cur_dir;
+
+                dir_vec.push( new_cur_dir );
             }
             else
             {
@@ -252,29 +281,57 @@ function calcArray( pArray: string[], pKnzDebug : boolean = true ) : void
                 wl( "+ changing to " + cur_directory.getName() );
 
                 start_dir = cur_directory;
+
+                dir_vec.push( cur_directory );
             }
         }
-        else if ( cur_input_str === "$ ls")
+        else if ( cur_input_str === "$ ls" )
         {
-            //wl( "found ls" )
+            //wl( "found ls" );
         }
-        else if ( cur_input_str.startsWith( "dir ") )
+        else if ( cur_input_str.startsWith( "dir " ) )
         {
-            //wl( "found file for dir ")
+            //wl( "found file for dir " );
         }
         else
         {
-            //wl( "found file " + cur_input_str );
+            wl( "found file " + cur_input_str + " adding to directory " + cur_directory?.getName() );
 
-            cur_directory!.addFile( cur_input_str );
+            cur_directory!.addFile( cur_input_str )
         }
     }
 
+    /*
+     * *******************************************************************************************************
+     * Debug: Displaying the parsed directory structure
+     * *******************************************************************************************************
+     */
+
     if ( pKnzDebug )
     {
+        wl( "" );
         wl( start_dir!.getStrSubDirs() );
     }
 
+    /*
+     * *******************************************************************************************************
+     * Calculating Part 1 - Sum up all directory-sizes, which has at most 100000 File-Size
+     * *******************************************************************************************************
+     */
+
+    wl( "" );
+
+    for ( const cur_dir of dir_vec )
+    {
+        wl( cur_dir.toString() );
+
+        if ( cur_dir.getDirectorySize() < 100000)
+        {
+            result_part_01 += cur_dir.getDirectorySize();
+        }
+    }
+
+    wl( "" );
     wl( "" );
     wl( "Result Part 1 = " + result_part_01 );
     wl( "Result Part 2 = " + result_part_02 );
