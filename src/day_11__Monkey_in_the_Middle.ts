@@ -33,7 +33,28 @@ import * as readline from 'readline';
 const OPERATION_PLUS           : string = "+";
 const OPERATION_MULTIPLICATION : string = "*";
 
-type InspectionResult = { new_value : number, relief_value : number, throw_to_monkey : number, dbg_string : string };
+type big_int = number;
+
+type InspectionResult = { new_value : big_int, relief_value : big_int, throw_to_monkey : number, dbg_string : string };
+
+
+function doPlus( pValueA : big_int, pValueB : big_int ) : big_int
+{
+    return pValueA + pValueB;
+}
+
+
+function doMultiplication( pValueA : big_int, pValueB : big_int ) : big_int
+{
+    return pValueA * pValueB;
+}
+
+
+function doDivision( pValueA : big_int, pValueB : number ) : big_int
+{
+    return pValueA / pValueB;
+}
+
 
 
 function wl( pString : string ) // wl = short for "writeLog"
@@ -61,11 +82,11 @@ class Monkey
 
     monkey_nr        : number;
 
-    vector_items     : number[];
+    vector_items     : big_int[];
 
     operation_art    : string;
     
-    operation_number : number;
+    operation_number : big_int;
 
     test_number      : number; 
 
@@ -150,25 +171,25 @@ class Monkey
         this.test_false = parseInt( str_temp );
     }
 
-    private doCalc( pOldValue : number ) : number
+    private doCalc( pOldValue : big_int ) : big_int
     {
-        let op_value : number = this.operation_number == -1 ? pOldValue : this.operation_number;
+        let op_value : big_int = this.operation_number == -1 ? pOldValue : this.operation_number;
 
-        let new_value : number = -1;
+        let new_value : big_int = -1;
 
         if ( this.operation_art === OPERATION_PLUS )
         {
-            new_value = pOldValue + op_value;
+            new_value = doPlus( pOldValue, op_value );
         }
         else if ( this.operation_art === OPERATION_MULTIPLICATION )
         {
-            new_value = pOldValue * op_value;
+            new_value = doMultiplication( pOldValue, op_value );
         }
 
         return new_value;
     }
 
-    private doTest( pValue : number ) : boolean
+    private doTest( pValue : big_int ) : boolean
     {
         if ( ( pValue % this.test_number ) === 0 ) 
         { 
@@ -178,13 +199,13 @@ class Monkey
         return false;
     }
 
-    public calcItemNr( pOldValue : number, pReliefDivider : number, pKnzDebug : boolean ) : InspectionResult
+    public calcItemNr( pOldValue : big_int, pReliefDivider : big_int, pKnzDebug : boolean ) : InspectionResult
     {
         this.items_inspected++;
 
-        let new_value : number = this.doCalc( pOldValue );
+        let new_value : big_int = this.doCalc( pOldValue );
 
-        let relief_value : number = Math.floor( new_value / pReliefDivider );
+        let relief_value : big_int = pReliefDivider > 0 ? Math.floor( new_value / pReliefDivider ) : new_value;
 
         let divisible : boolean = this.doTest( relief_value );
 
@@ -202,12 +223,12 @@ class Monkey
         return { new_value : new_value, relief_value : relief_value, throw_to_monkey : throw_to_monkey, dbg_string : dbg_string }
     }
 
-    public popItem() : number
+    public popItem() : big_int
     {
         return this.vector_items.splice( 0, 1 )[0]!;
     }
 
-    public pushItem( pNumber : number ) : void 
+    public pushItem( pNumber : big_int ) : void 
     {
         this.vector_items.push( pNumber );
     }
@@ -330,7 +351,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
         {
             while( m_inst.getItemCount() > 0 )
             {
-                let old_value : number = m_inst.popItem();
+                let old_value : big_int = m_inst.popItem();
 
                 let res_inspec : InspectionResult = m_inst.calcItemNr( old_value, 3, pKnzDebug );
                 
