@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import * as readline from 'readline';
+import { Decimal } from 'decimal.js';
 
 /*
  * https://adventofcode.com/2022/day/11
@@ -33,27 +34,46 @@ import * as readline from 'readline';
 const OPERATION_PLUS           : string = "+";
 const OPERATION_MULTIPLICATION : string = "*";
 
-type big_int = number;
+type big_int = Decimal;
 
 type InspectionResult = { new_value : big_int, relief_value : big_int, throw_to_monkey : number, dbg_string : string };
 
 
 function doPlus( pValueA : big_int, pValueB : big_int ) : big_int
 {
-    return pValueA + pValueB;
+    return pValueA.add( pValueB );
 }
 
 
 function doMultiplication( pValueA : big_int, pValueB : big_int ) : big_int
 {
-    return pValueA * pValueB;
+    return pValueA.mul( pValueB );
 }
 
 
-function doDivision( pValueA : big_int, pValueB : number ) : big_int
+function doModulo( pValueA : big_int, pValueB : number ) : big_int
 {
-    return pValueA / pValueB;
+    return pValueA.modulo( pValueB );
 }
+
+
+
+// function doPlus( pValueA : big_int, pValueB : big_int ) : big_int
+// {
+//     return pValueA + pValueB;
+// }
+
+
+// function doMultiplication( pValueA : big_int, pValueB : big_int ) : big_int
+// {
+//     return pValueA * pValueB;
+// }
+
+
+// function doDivision( pValueA : big_int, pValueB : number ) : big_int
+// {
+//     return pValueA / pValueB;
+// }
 
 
 
@@ -112,7 +132,7 @@ class Monkey
          */
         let item_string_vector : string[] = pArray[ pIndexStart + 1 ]!.substring( 18 ).split( "," );
 
-        this.vector_items = item_string_vector.map( string_nr => Number( string_nr.trim() ) );
+        this.vector_items = item_string_vector.map( string_nr => new Decimal( string_nr.trim() ) );
 
         /*
          * Operation in row at index_start + 2
@@ -140,11 +160,11 @@ class Monkey
 
         if ( str_temp === "old" )
         {
-            this.operation_number = -1;
+            this.operation_number = new Decimal( -1 );
         }
         else
         {
-            this.operation_number = parseInt( str_temp );
+            this.operation_number = new Decimal( parseInt( str_temp ) );
         }
 
         /*
@@ -173,9 +193,9 @@ class Monkey
 
     private doCalc( pOldValue : big_int ) : big_int
     {
-        let op_value : big_int = this.operation_number == -1 ? pOldValue : this.operation_number;
+        let op_value : big_int = this.operation_number.toNumber() == -1 ? pOldValue : this.operation_number;
 
-        let new_value : big_int = -1;
+        let new_value : big_int = new Decimal( -1 );
 
         if ( this.operation_art === OPERATION_PLUS )
         {
@@ -191,7 +211,7 @@ class Monkey
 
     private doTest( pValue : big_int ) : boolean
     {
-        if ( ( pValue % this.test_number ) === 0 ) 
+        if ( doModulo( pValue, this.test_number ).toNumber() === 0 ) 
         { 
             return true;
         }
@@ -199,13 +219,13 @@ class Monkey
         return false;
     }
 
-    public calcItemNr( pOldValue : big_int, pReliefDivider : big_int, pKnzDebug : boolean ) : InspectionResult
+    public calcItemNr( pOldValue : big_int, pReliefDivider : number, pKnzDebug : boolean ) : InspectionResult
     {
         this.items_inspected++;
 
         let new_value : big_int = this.doCalc( pOldValue );
 
-        let relief_value : big_int = pReliefDivider > 0 ? Math.floor( new_value / pReliefDivider ) : new_value;
+        let relief_value : big_int = pReliefDivider > 0 ? new Decimal(  Math.floor( new_value.dividedBy( new Decimal( pReliefDivider ) ).toNumber() ) ) : new_value;
 
         let divisible : boolean = this.doTest( relief_value );
 
@@ -217,7 +237,7 @@ class Monkey
         {
             let pad_count = 6;
 
-            dbg_string = "Monkey " + this.monkey_nr + ": " + pad( this.items_inspected, pad_count ) + " -> Old " + pad( pOldValue, pad_count ) + "  New Value " + pad( new_value, pad_count ) + "  Relief " + pad( relief_value, pad_count ) + "  Div " + pad( this.test_number, 2 ) + " " + pad( "" + divisible, 5 ) + "  Throwing To " + throw_to_monkey;
+            dbg_string = "Monkey " + this.monkey_nr + ": " + pad( this.items_inspected, pad_count ) + " -> Old " + pad( pOldValue.toString(), pad_count ) + "  New Value " + pad( new_value.toString(), pad_count ) + "  Relief " + pad( relief_value.toString(), pad_count ) + "  Div " + pad( this.test_number, 2 ) + " " + pad( "" + divisible, 5 ) + "  Throwing To " + throw_to_monkey;
         }
 
         return { new_value : new_value, relief_value : relief_value, throw_to_monkey : throw_to_monkey, dbg_string : dbg_string }
@@ -279,7 +299,9 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
      * *******************************************************************************************************
      */
 
-    let monkey_vector : Monkey[] = [];
+    let monkey_vector_part1 : Monkey[] = [];
+    let monkey_vector_part2 : Monkey[] = [];
+
 
     let result_part_01 : number = 0;
     let result_part_02 : number = 0;
@@ -294,7 +316,8 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
     {
         if ( cur_input_str === "" )
         {
-            monkey_vector.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
+            monkey_vector_part1.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
+            monkey_vector_part2.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
 
             monkey_nr++;
 
@@ -304,9 +327,12 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
         cur_index++;
     }
 
-    monkey_vector.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
+    monkey_vector_part1.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
+    monkey_vector_part2.push( new Monkey( pArray, index_monkey_init_start, monkey_nr ) );
 
-    for ( const m_inst of monkey_vector )
+
+
+    for ( const m_inst of monkey_vector_part1 )
     {
         wl( m_inst.toString() );
     }
@@ -319,7 +345,20 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     const getMonkeyNr = ( pMonkeyNr : number ) : Monkey | undefined => {
          
-            for ( const m_inst of monkey_vector )
+            for ( const m_inst of monkey_vector_part1 )
+            {
+                if ( m_inst.isMonkeyNr( pMonkeyNr ) )
+                {
+                    return m_inst;
+                }
+            }
+        
+            return undefined;   
+        }
+
+    const getMonkeyNr2 = ( pMonkeyNr : number ) : Monkey | undefined => {
+         
+            for ( const m_inst of monkey_vector_part2 )
             {
                 if ( m_inst.isMonkeyNr( pMonkeyNr ) )
                 {
@@ -332,7 +371,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     /*
      * *******************************************************************************************************
-     * Playing rounds
+     * Playing rounds Part 1
      * *******************************************************************************************************
      */
 
@@ -347,7 +386,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
             wl( "Round " + ( round_nr + 1 ) );
         }
 
-        for ( const m_inst of monkey_vector )
+        for ( const m_inst of monkey_vector_part1 )
         {
             while( m_inst.getItemCount() > 0 )
             {
@@ -378,6 +417,52 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     /*
      * *******************************************************************************************************
+     * Playing rounds Part 2
+     * *******************************************************************************************************
+     */
+
+    rounds_to_play = 1000;
+    round_nr       = 0;
+
+    while ( round_nr < rounds_to_play  )
+    {
+        if ( pKnzDebug )
+        {
+            wl( "" );
+            wl( "Round " + ( round_nr + 1 ) );
+        }
+
+        for ( const m_inst of monkey_vector_part2 )
+        {
+            while( m_inst.getItemCount() > 0 )
+            {
+                let old_value : big_int = m_inst.popItem();
+
+                let res_inspec : InspectionResult = m_inst.calcItemNr( old_value, 3, pKnzDebug );
+                
+                if ( pKnzDebug )
+                {
+                    wl( res_inspec.dbg_string );
+                }
+
+                let receiver_monkey = getMonkeyNr2( res_inspec.throw_to_monkey );
+
+                if ( receiver_monkey !== undefined )
+                {
+                    receiver_monkey.pushItem( res_inspec.relief_value );
+                }
+                else
+                {
+                    wl( "ERROR - Monkey " + res_inspec.throw_to_monkey + " not found" );
+                }
+            }
+        }
+
+        round_nr++;
+    }
+
+    /*
+     * *******************************************************************************************************
      * Calculating Part 1 - Monkey Businiss
      * *******************************************************************************************************
      */
@@ -385,7 +470,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     wl( "" );
 
-    for ( const m_inst of monkey_vector )
+    for ( const m_inst of monkey_vector_part1 )
     {
         wl( m_inst.toStringDbg() );
 
@@ -400,8 +485,39 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     result_part_01 = vector_inspected_items[ 0 ]! * vector_inspected_items[ 1 ]!;
 
+
+
+
+    /*
+     * *******************************************************************************************************
+     * Calculating Part 2 - Monkey Businiss
+     * *******************************************************************************************************
+     */
+    let vector_inspected_items2 : number[] = [];
+
     wl( "" );
-    wl( "Monkey Business = " + vector_inspected_items[ 0 ]! + " * " + vector_inspected_items[ 1 ]! + " = " + result_part_01 + " " );
+
+    for ( const m_inst of monkey_vector_part2 )
+    {
+        wl( m_inst.toStringDbg() );
+
+        vector_inspected_items2.push( m_inst.getItemsInspected() );
+    }
+
+    vector_inspected_items2.sort( ( a, b ) => b - a );
+
+    wl( "" );
+
+    console.log( vector_inspected_items2 );
+
+    result_part_02 = vector_inspected_items2[ 0 ]! * vector_inspected_items2[ 1 ]!;
+
+    wl( "" );
+    wl( "" );
+    wl( "Monkey Business 1 = " + vector_inspected_items[ 0 ]! + " * " + vector_inspected_items[ 1 ]! + " = " + result_part_01 + " " );
+    wl( "Monkey Business 2 = " + vector_inspected_items2[ 0 ]! + " * " + vector_inspected_items2[ 1 ]! + " = " + result_part_02 + " " );
+
+
 
     /*
      * *******************************************************************************************************
@@ -491,6 +607,14 @@ wl( "" );
 calcArray( getTestArray1(), true );
 
 //checkReaddatei();
+
+        const a = new Decimal(123.45);
+        const b = new Decimal('0.1');
+        const sum = a.plus(b);
+        const diff = a.minus(b);
+        const prod = a.times(b);
+
+        wl ( diff.toString() );
 
 wl( "" )
 wl( "Day 11 - Ende" );
