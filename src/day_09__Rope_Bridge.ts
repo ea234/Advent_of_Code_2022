@@ -10,32 +10,87 @@ import * as readline from 'readline';
  * 
  * Day 09 - Rope Bridge
  * 
- * Step   1 Direction R   4 - Head R5C9 Tail R5C8
- * Step   2 Direction U   4 - Head R1C9 Tail R2C9
- * Step   3 Direction L   3 - Head R1C6 Tail R1C7
- * Step   4 Direction D   1 - Head R2C6 Tail R2C6
- * Step   5 Direction R   4 - Head R2C10 Tail R2C9
- * Step   6 Direction D   1 - Head R3C10 Tail R3C10
- * Step   7 Direction L   5 - Head R3C5 Tail R3C6
- * Step   8 Direction R   2 - Head R3C7 Tail R3C6
  * 
- *      012345678901234        012345678901234
- *   0                      0
- *   1        HHHH          1         TT
- *   2        HHHHH         2        TTTT
- *   3       HHHHHH         3        TTTTT
- *   4           H          4           T
- *   5        HHHH          5       TTTT
- *   6                      6
- *   7                      7
- *   8                      8
- *   9                      9
+ * Direction R Amount 4  R5C1 R5C0 diff R  0   0  C  1   1  Move  R  0 C  0 To R5C0
+ * Direction R Amount 4  R5C2 R5C0 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C1
+ * Direction R Amount 4  R5C3 R5C1 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C2
+ * Direction R Amount 4  R5C4 R5C2 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C3
+ * Direction U Amount 4  R4C4 R5C3 diff R -1  -1  C  1   1  Move  R  0 C  0 To R5C3
+ * Direction U Amount 4  R3C4 R5C3 diff R -2  -1  C  1   1  Move  R -1 C  1 To R4C4
+ * Direction U Amount 4  R2C4 R4C4 diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C4
+ * Direction U Amount 4  R1C4 R3C4 diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C4
+ * Direction L Amount 3  R1C3 R2C4 diff R -1  -1  C -1  -1  Move  R  0 C  0 To R2C4
+ * Direction L Amount 3  R1C2 R2C4 diff R -1  -1  C -2  -1  Move  R -1 C -1 To R1C3
+ * Direction L Amount 3  R1C1 R1C3 diff R  0   0  C -2  -1  Move  R  0 C -1 To R1C2
+ * Direction D Amount 1  R2C1 R1C2 diff R  1   1  C -1  -1  Move  R  0 C  0 To R1C2
+ * Direction R Amount 4  R2C2 R1C2 diff R  1   1  C  0   0  Move  R  0 C  0 To R1C2
+ * Direction R Amount 4  R2C3 R1C2 diff R  1   1  C  1   1  Move  R  0 C  0 To R1C2
+ * Direction R Amount 4  R2C4 R1C2 diff R  1   1  C  2   1  Move  R  1 C  1 To R2C3
+ * Direction R Amount 4  R2C5 R2C3 diff R  0   0  C  2   1  Move  R  0 C  1 To R2C4
+ * Direction D Amount 1  R3C5 R2C4 diff R  1   1  C  1   1  Move  R  0 C  0 To R2C4
+ * Direction L Amount 5  R3C4 R2C4 diff R  1   1  C  0   0  Move  R  0 C  0 To R2C4
+ * Direction L Amount 5  R3C3 R2C4 diff R  1   1  C -1  -1  Move  R  0 C  0 To R2C4
+ * Direction L Amount 5  R3C2 R2C4 diff R  1   1  C -2  -1  Move  R  1 C -1 To R3C3
+ * Direction L Amount 5  R3C1 R3C3 diff R  0   0  C -2  -1  Move  R  0 C -1 To R3C2
+ * Direction L Amount 5  R3C0 R3C2 diff R  0   0  C -2  -1  Move  R  0 C -1 To R3C1
+ * Direction R Amount 2  R3C1 R3C1 diff R  0   0  C  0   0  Move  R  0 C  0 To R3C1
+ * Direction R Amount 2  R3C2 R3C1 diff R  0   0  C  1   1  Move  R  0 C  0 To R3C1
  * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3  HHHHHH     3   TTTT      3   TH
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
  * 
- * Result Part 1 = 20
- * Result Part 2 = 16
+ * Result Part 1 = 13
+ * Result Part 2 = 0
  * 
  * Day 09 - Ende
+ * 
+ * ----------------------------------------------------------------------------
+ * Test with negative grid numbers
+ * 
+ * Direction L Amount 5  R0C1 R0C3 diff R  0   0  C -2  -1  Move  R  0 C -1 To R0C2
+ * 
+ *      012345        012345        012345
+ *  -2   HHHH     -2    TT      -2
+ *  -1   HHHHH    -1     TT     -1
+ *   0  HHHHHH     0   TTTT      0  HT
+ *   1      H      1      T      1
+ *   2   HHHH      2  TTTT       2
+ * 
+ * Direction L Amount 5  R0C0 R0C2 diff R  0   0  C -2  -1  Move  R  0 C -1 To R0C1
+ * 
+ *      012345        012345        012345
+ *  -2   HHHH     -2    TT      -2
+ *  -1   HHHHH    -1     TT     -1
+ *   0  HHHHHH     0   TTTT      0   T
+ *   1      H      1      T      1
+ *   2   HHHH      2  TTTT       2
+ * 
+ * Direction R Amount 2  R0C1 R0C1 diff R  0   0  C  0   0  Move  R  0 C  0 To R0C1
+ * 
+ *      012345        012345        012345
+ *  -2   HHHH     -2    TT      -2
+ *  -1   HHHHH    -1     TT     -1
+ *   0  HHHHHH     0   TTTT      0   TH
+ *   1      H      1      T      1
+ *   2   HHHH      2  TTTT       2
+ * 
+ * Direction R Amount 2  R0C2 R0C1 diff R  0   0  C  1   1  Move  R  0 C  0 To R0C1
+ * 
+ *      012345        012345        012345
+ *  -2   HHHH     -2    TT      -2
+ *  -1   HHHHH    -1     TT     -1
+ *   0  HHHHHH     0   TTTT      0   TH
+ *   1      H      1      T      1
+ *   2   HHHH      2  TTTT       2
+ * 
+ * Result Part 1 = 13
+ * Result Part 2 = 0
+ * 
  * 
  */
 
@@ -49,14 +104,20 @@ type PropertieMap = Record< string, string >;
 
 class RopeBridge
 {
-    map_head_row : number = 0;
-    map_head_col : number = 0;
+    map_head_row  : number = 0;
+    map_head_col  : number = 0;
 
-    map_tail_row : number = 0;
-    map_tail_col : number = 0;
+    map_tail_row  : number = 0;
+    map_tail_col  : number = 0;
 
-    map_tail     : PropertieMap = {};
-    map_head     : PropertieMap = {};
+    map_tail      : PropertieMap = {};
+    map_head      : PropertieMap = {};
+
+    grid_min_row  : number = 0;
+    grid_min_col  : number = 0;
+
+    grid_max_rows : number = 1;
+    grid_max_cols : number = 1;
 
     constructor( pMapRow : number, pMapCol : number )
     {
@@ -114,7 +175,7 @@ class RopeBridge
 
     public getMaxRow()
     {
-        return this.map_tail_row > this.map_head_row ? this.map_tail_row : this.map_head_row;
+        return ( this.map_tail_row > this.map_head_row ? this.map_tail_row : this.map_head_row ) + 1;
     }
 
     public getMinCol()
@@ -124,11 +185,68 @@ class RopeBridge
 
     public getMaxCol()
     {
-        return this.map_tail_col > this.map_head_col ? this.map_tail_col : this.map_head_col;
+        return ( this.map_tail_col > this.map_head_col ? this.map_tail_col : this.map_head_col ) + 1;
     }
 
-    public moveHead( pDirection : string, pAmount : string )
+    private checkGridMinMax()
     {
+        if ( this.getMinRow() < this.grid_min_row )
+        {
+            this.grid_min_row = this.getMinRow();
+        }
+
+        if ( this.getMinCol() < this.grid_min_col )
+        {
+            this.grid_min_col = this.getMinCol();
+        }
+
+        if ( this.getMaxRow() > this.grid_max_rows )
+        {
+            this.grid_max_rows = this.getMaxRow();
+        }
+
+        if ( this.getMaxCol() > this.grid_max_cols )
+        {
+            this.grid_max_cols = this.getMaxCol();
+        }
+    }
+ 
+    public countTailPath() : number
+    {
+        return countTiles( this.getTailMap(), this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols, CHAR_MAP_TAIL );
+    }
+
+    public getDebugGridHead() : string 
+    {
+        return getDebugMap( this.getHeadMap(), this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
+    }
+
+
+    public getDebugGridTail() : string 
+    {
+        return getDebugMap( this.getTailMap(), this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
+    }
+
+    public getDebugMaps() : string 
+    {
+        let map_both      : PropertieMap = {};
+
+        map_both[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
+        map_both[ this.getMapTailKey() ] = CHAR_MAP_TAIL;
+
+        let dbg_head_map : string = this.getDebugGridHead(); 
+
+        let dbg_tail_map : string = this.getDebugGridTail(); 
+
+        let dbg_map_both : string = getDebugMap( map_both,          this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
+
+        return combineStrings( combineStrings( dbg_head_map, dbg_tail_map ), dbg_map_both ) + "\n";
+    }
+   
+    public moveHead( pDirection : string, pAmount : string, pKnzDebug : boolean = false )
+    {
+        let dbg_string     : string = "Direction " + pDirection + " Amount " + pAmount + " ";
+
         let move_value     : number = parseInt( pAmount );
 
         let delta_move_row : number = 0;
@@ -145,11 +263,16 @@ class RopeBridge
         {
             for( let step_count = 0; step_count < delta_move_row; step_count++ )
             {
-               this.map_head_row += step_direction;
+                this.map_head_row += step_direction;
 
-               this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
+                this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
 
-               this.moveTail();
+                let dbg_string1 = dbg_string + this.moveTail( pKnzDebug );
+
+                if ( pKnzDebug )
+                {
+                    wl( this.getDebugMaps() + "\n" + dbg_string1 + "\n" );
+                }
             }
         }
 
@@ -157,16 +280,21 @@ class RopeBridge
         {
             for( let step_count = 0; step_count < delta_move_col; step_count++ )
             {
-               this.map_head_col += step_direction;
+                this.map_head_col += step_direction;
 
-               this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
+                this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
 
-               this.moveTail();
+                let dbg_string1 = dbg_string + this.moveTail( pKnzDebug );
+
+                if ( pKnzDebug )
+                {
+                    wl( this.getDebugMaps() + "\n" + dbg_string1 + "\n" );
+                }
             }
         }
     }
 
-    public moveTail() 
+    private moveTail( pKnzDebug : boolean ) : string 
     {
         /*
          * Head-Position is leading
@@ -183,55 +311,53 @@ class RopeBridge
 
         let direction_row  : number = Math.sign( delta_row_diff );
 
-        let delta_row_step : number = ( delta_row_diff === 0 ? 0 : direction_row );
+        let delta_row_step : number = 0;
 
 
         let delta_col_diff : number = this.map_head_col - this.map_tail_col;
 
         let direction_col  : number = Math.sign( delta_col_diff );
 
-        let delta_col_step : number = ( delta_col_diff === 0 ? 0 : direction_col );
+        let delta_col_step : number = 0;
 
-        delta_row_step = 0;
-        delta_col_step = 0;
-
-        if ( ( Math.abs( delta_col_diff ) > 0 ) && ( Math.abs( delta_row_diff ) > 0 ) )
+        if ( Math.abs( delta_row_diff ) > 1 )
         {
-            /* 
-             * If the head and tail aren't touching 
-             * and aren't in the same row or column, 
-             * the tail always moves one step diagonally to keep up:
-             */
-            delta_col_step = direction_col;
             delta_row_step = direction_row;
         }
-        else
+
+        if ( Math.abs( delta_col_diff ) > 1 )
         {
-            /*
-             * If the head is ever two steps directly up, down, left, or right from the tail, 
-             * the tail must also move one step in that direction so it remains close enough.
-             */
-
-            if ( ( delta_col_diff === 0 ) && ( Math.abs( delta_row_diff ) === 2) ) 
-            {
-                delta_row_step = direction_row;
-            }
-            else if ( ( delta_row_diff === 0 ) && ( Math.abs( delta_col_diff ) === 2) ) 
-            {
-                delta_col_step = direction_col;
-            }
-            else
-            {
-                delta_row_step = 0;
-                delta_col_step = 0;
-            }
-
+            delta_col_step = direction_col;
         }
 
+        if ( Math.abs( delta_row_diff ) == 2 )
+        {
+            delta_col_step = direction_col;
+        }
+       
+        if ( Math.abs( delta_col_diff ) == 2 )
+        {
+            delta_row_step = direction_row;
+        }
+
+        let dbg_string : string = pKnzDebug ? " " + this.getMapHeadKey() + " " + this.getMapTailKey() : "";
+        
         this.map_tail_row += delta_row_step;
         this.map_tail_col += delta_col_step;
 
+        if ( pKnzDebug )
+        {
+            dbg_string += " diff R "   + pad( delta_row_diff, 2 ) + "  "  + pad( direction_row,  2 );
+            dbg_string += "  C "       + pad( delta_col_diff, 2 ) + "  "  + pad( direction_col,  2 );
+            dbg_string += "  Move  R " + pad( delta_row_step, 2 ) + " C " + pad( delta_col_step, 2 );
+            dbg_string += " To " + this.getMapTailKey();
+        }
+
         this.map_tail[ this.getMapTailKey() ] = CHAR_MAP_TAIL;
+
+        this.checkGridMinMax();
+
+        return dbg_string
     }
 
     public toString() : string 
@@ -292,18 +418,15 @@ function getDebugMap( pHashMap : PropertieMap, pMinRows : number, pMinCols : num
         str_result += cur_col % 10;
     }
 
-    str_result += "\n";
-
     for ( let cur_row = pMinRows; cur_row < pMaxRows; cur_row++ )
     {
+        str_result += "\n";
         str_result += pad( cur_row, 3 ) + "  ";
 
         for ( let cur_col = pMinCols; cur_col < pMaxCols; cur_col++ )
         {
             str_result += pHashMap[ "R" + cur_row  + "C" + cur_col ] ?? " ";
         }
-
-        str_result += "\n";
     }
 
     return str_result;
@@ -320,7 +443,7 @@ function countTiles( pHashMap : PropertieMap, pMinRows : number, pMinCols : numb
         {
             if ( ( pHashMap[ "R" + cur_row  + "C" + cur_col  ] ?? CHAR_MAP_FREE ) == pTile )
             {
-                  count_tile++;
+                count_tile++;
             }
         }
     }
@@ -336,54 +459,20 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
      * Parsing the input Array. Doing the Movings
      * *******************************************************************************************************
      */
-    let start_row        : number = 5;
-    let start_col        : number = 5;
+    let start_row        : number = 2;
+    let start_col        : number = 0;
 
     let result_part_01   : number = 0;
     let result_part_02   : number = 0;
-
-    let grid_min_row     : number = 0;
-    let grid_min_col     : number = 0;
-
-    let grid_max_rows    : number = 10;
-    let grid_max_cols    : number = 10;
     
     let rope_bridge      : RopeBridge = new RopeBridge( start_row, start_col );
-
-    let step_count       : number = 0;
 
     for ( const cur_input_str of pArray ) 
     {
         let [ s_direction, s_value ] = cur_input_str.trim().split( " " );
 
-        step_count++;
-
-        rope_bridge.moveHead( s_direction!, s_value! );
-
-        wl( "Step " + pad( step_count, 3 ) + " Direction " + s_direction + " " + pad( s_value!, 3 ) + " - " + rope_bridge.toString() );
-
-        if ( rope_bridge.getMinRow() < grid_min_row )
-        {
-            grid_min_row = rope_bridge.getMinRow();
-        }
-
-        if ( rope_bridge.getMinCol() < grid_min_col )
-        {
-            grid_min_col = rope_bridge.getMinCol() ;
-        }
-
-        if ( rope_bridge.getMaxRow() > grid_max_rows )
-        {
-            grid_max_rows = rope_bridge.getMaxRow();
-        }
-
-        if ( rope_bridge.getMaxCol() > grid_max_cols )
-        {
-            grid_max_cols = rope_bridge.getMaxCol() ;
-        }
+        rope_bridge.moveHead( s_direction!, s_value!, pKnzDebug );
     }
-
-    grid_max_cols += 5;
 
     /*
      * *******************************************************************************************************
@@ -391,16 +480,17 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
      * *******************************************************************************************************
      */
 
-    let dbg_head_map : string = getDebugMap( rope_bridge.getHeadMap(), grid_min_row, grid_min_col, grid_max_rows, grid_max_cols ) 
-    let dbg_tail_map : string = getDebugMap( rope_bridge.getTailMap(), grid_min_row, grid_min_col, grid_max_rows, grid_max_cols ) 
-
-    result_part_01 = countTiles( rope_bridge.getHeadMap(), grid_min_row, grid_min_col, grid_max_rows, grid_max_cols, "H" );
-    result_part_02 = countTiles( rope_bridge.getTailMap(), grid_min_row, grid_min_col, grid_max_rows, grid_max_cols, "T" );
+    result_part_01 = rope_bridge.countTailPath();
 
     wl( "" );
-    wl( "" );
-    wl( combineStrings( dbg_head_map, dbg_tail_map ) );
-    wl( "" );
+
+    if ( pKnzDebug )
+    {
+        wl( "" );
+        wl( rope_bridge.getDebugMaps() );
+        wl( "" );
+    }
+
     wl( "Result Part 1 = " + result_part_01 );
     wl( "Result Part 2 = " + result_part_02 );
 }
@@ -408,7 +498,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
 async function readFileLines() : Promise<string[]> 
 {
-    const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day07_input.txt";
+    const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day09_input.txt";
 
     const lines: string[] = [];
 
@@ -466,3 +556,263 @@ calcArray( getTestArray1(), true );
 
 wl( "" )
 wl( "Day 09 - Ende" );
+
+/*
+ * /home/ea234/.nvm/versions/node/v20.16.0/bin/node ./dist/day09/day_09__Rope_Bridge.js
+ * 
+ * Day 09 - Rope Bridge
+ * 
+ *      01        01        01
+ *   0         0         0
+ *   1         1         1
+ *   2         2         2
+ *   3         3         3
+ *   4         4         4
+ *   5   H     5  T      5  TH
+ * 
+ * Direction R Amount 4  R5C1 R5C0 diff R  0   0  C  1   1  Move  R  0 C  0 To R5C0
+ * 
+ *      012        012        012
+ *   0          0          0
+ *   1          1          1
+ *   2          2          2
+ *   3          3          3
+ *   4          4          4
+ *   5   HH     5  TT      5   TH
+ * 
+ * Direction R Amount 4  R5C2 R5C0 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C1
+ * 
+ *      0123        0123        0123
+ *   0           0           0
+ *   1           1           1
+ *   2           2           2
+ *   3           3           3
+ *   4           4           4
+ *   5   HHH     5  TTT      5    TH
+ * 
+ * Direction R Amount 4  R5C3 R5C1 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C2
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1            1            1
+ *   2            2            2
+ *   3            3            3
+ *   4            4            4
+ *   5   HHHH     5  TTTT      5     TH
+ * 
+ * Direction R Amount 4  R5C4 R5C2 diff R  0   0  C  2   1  Move  R  0 C  1 To R5C3
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1            1            1
+ *   2            2            2
+ *   3            3            3
+ *   4      H     4            4      H
+ *   5   HHHH     5  TTTT      5     T
+ * 
+ * Direction U Amount 4  R4C4 R5C3 diff R -1  -1  C  1   1  Move  R  0 C  0 To R5C3
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1            1            1
+ *   2            2            2
+ *   3      H     3            3      H
+ *   4      H     4      T     4      T
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction U Amount 4  R3C4 R5C3 diff R -2  -1  C  1   1  Move  R -1 C  1 To R4C4
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1            1            1
+ *   2      H     2            2      H
+ *   3      H     3      T     3      T
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction U Amount 4  R2C4 R4C4 diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C4
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1      H     1            1      H
+ *   2      H     2      T     2      T
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction U Amount 4  R1C4 R3C4 diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C4
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1     HH     1            1     H
+ *   2      H     2      T     2      T
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction L Amount 3  R1C3 R2C4 diff R -1  -1  C -1  -1  Move  R  0 C  0 To R2C4
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1    HHH     1     T      1    HT
+ *   2      H     2      T     2
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction L Amount 3  R1C2 R2C4 diff R -1  -1  C -2  -1  Move  R -1 C -1 To R1C3
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1   HHHH     1    TT      1   HT
+ *   2      H     2      T     2
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction L Amount 3  R1C1 R1C3 diff R  0   0  C -2  -1  Move  R  0 C -1 To R1C2
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1   HHHH     1    TT      1    T
+ *   2   H  H     2      T     2   H
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction D Amount 1  R2C1 R1C2 diff R  1   1  C -1  -1  Move  R  0 C  0 To R1C2
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1   HHHH     1    TT      1    T
+ *   2   HH H     2      T     2    H
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction R Amount 4  R2C2 R1C2 diff R  1   1  C  0   0  Move  R  0 C  0 To R1C2
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1   HHHH     1    TT      1    T
+ *   2   HHHH     2      T     2     H
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction R Amount 4  R2C3 R1C2 diff R  1   1  C  1   1  Move  R  0 C  0 To R1C2
+ * 
+ *      01234        01234        01234
+ *   0            0            0
+ *   1   HHHH     1    TT      1
+ *   2   HHHH     2     TT     2     TH
+ *   3      H     3      T     3
+ *   4      H     4      T     4
+ *   5   HHHH     5  TTTT      5
+ * 
+ * Direction R Amount 4  R2C4 R1C2 diff R  1   1  C  2   1  Move  R  1 C  1 To R2C3
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2      TH
+ *   3      H      3      T      3
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction R Amount 4  R2C5 R2C3 diff R  0   0  C  2   1  Move  R  0 C  1 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2      T
+ *   3      HH     3      T      3       H
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction D Amount 1  R3C5 R2C4 diff R  1   1  C  1   1  Move  R  0 C  0 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2      T
+ *   3      HH     3      T      3      H
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction L Amount 5  R3C4 R2C4 diff R  1   1  C  0   0  Move  R  0 C  0 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2      T
+ *   3     HHH     3      T      3     H
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction L Amount 5  R3C3 R2C4 diff R  1   1  C -1  -1  Move  R  0 C  0 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3    HHHH     3     TT      3    HT
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction L Amount 5  R3C2 R2C4 diff R  1   1  C -2  -1  Move  R  1 C -1 To R3C3
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3   HHHHH     3    TTT      3   HT
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction L Amount 5  R3C1 R3C3 diff R  0   0  C -2  -1  Move  R  0 C -1 To R3C2
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3  HHHHHH     3   TTTT      3  HT
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction L Amount 5  R3C0 R3C2 diff R  0   0  C -2  -1  Move  R  0 C -1 To R3C1
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3  HHHHHH     3   TTTT      3   T
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction R Amount 2  R3C1 R3C1 diff R  0   0  C  0   0  Move  R  0 C  0 To R3C1
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3  HHHHHH     3   TTTT      3   TH
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Direction R Amount 2  R3C2 R3C1 diff R  0   0  C  1   1  Move  R  0 C  0 To R3C1
+ * 
+ *      012345        012345        012345
+ *   0             0             0
+ *   1   HHHH      1    TT       1
+ *   2   HHHHH     2     TT      2
+ *   3  HHHHHH     3   TTTT      3   TH
+ *   4      H      4      T      4
+ *   5   HHHH      5  TTTT       5
+ * 
+ * Result Part 1 = 13
+ * Result Part 2 = 0
+ * 
+ * Day 09 - Ende
+ * 
+ */
