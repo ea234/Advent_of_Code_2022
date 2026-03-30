@@ -94,38 +94,50 @@ import * as readline from 'readline';
  * 
  */
 
+let file_string     : string  = "";
+let file_write_on   : boolean = false;
+
 const CHAR_MAP_HEAD : string = "H";
 const CHAR_MAP_TAIL : string = "T";
 const CHAR_MAP_FREE : string = " ";
+
+const INDEX_HEAD    : number = 1;
+const INDEX_START   : number = 0;
 
 const STR_COMBINE_SPACER : string = "   "; 
 
 type PropertieMap = Record< string, string >;
 
+type Coords = { row : number; col : number, char : string };
+
 class RopeBridge
 {
-    map_head_row  : number = 0;
-    map_head_col  : number = 0;
-
-    map_tail_row  : number = 0;
-    map_tail_col  : number = 0;
+    vector_coords : Coords[] = [];
 
     map_tail      : PropertieMap = {};
+
     map_head      : PropertieMap = {};
 
     grid_min_row  : number = 0;
+
     grid_min_col  : number = 0;
 
     grid_max_rows : number = 1;
+
     grid_max_cols : number = 1;
 
-    constructor( pMapRow : number, pMapCol : number )
+    constructor( pMapRow : number, pMapCol : number, pLength : number )
     {
-        this.map_head_row = pMapRow;
-        this.map_head_col = pMapCol;
+        for ( let cur_index : number = 0; cur_index <= pLength; cur_index++ )
+        {
+            this.vector_coords[ cur_index ] = { row : pMapRow, col : pMapCol, char : "" + ( cur_index -1 ) }
+        }
 
-        this.map_tail_row = pMapRow;
-        this.map_tail_col = pMapCol;
+        this.vector_coords[ INDEX_START ]!.char = "S"; // Index 0 remembers the start position
+        this.vector_coords[ INDEX_HEAD  ]!.char = "H"; // Index 1 is the Head
+        this.vector_coords[ pLength     ]!.char = "T"; // Last index is the tail
+
+        console.log( this.vector_coords );
     }
 
     public getHeadMap() : PropertieMap 
@@ -138,76 +150,44 @@ class RopeBridge
         return this.map_tail;
     }
 
-    public getMapHeadRow() : number 
+    public getKeyIndex( pIndex : number ) : string 
     {
-        return this.map_head_row;
-    }
-
-    public getMapHeadCol() : number 
-    {
-        return this.map_head_col;
-    }
-
-    public getMapTailRow() : number 
-    {
-        return this.map_tail_row;
-    }
-
-    public getMapTailCol() : number 
-    {
-        return this.map_tail_col;
+        return "R" + this.vector_coords[ pIndex ]!.row + "C" + this.vector_coords[ pIndex ]!.col;
     }
 
     public getMapHeadKey() : string 
     {
-        return "R" + this.map_head_row + "C" + this.map_head_col;
+        return this.getKeyIndex( INDEX_HEAD );
     }
 
     public getMapTailKey() : string 
     {
-        return "R" + this.map_tail_row + "C" + this.map_tail_col;
-    }
-
-    public getMinRow()
-    {
-        return this.map_tail_row < this.map_head_row ? this.map_tail_row : this.map_head_row;
-    }
-
-    public getMaxRow()
-    {
-        return ( this.map_tail_row > this.map_head_row ? this.map_tail_row : this.map_head_row ) + 1;
-    }
-
-    public getMinCol()
-    {
-        return this.map_tail_col < this.map_head_col ? this.map_tail_col : this.map_head_col;
-    }
-
-    public getMaxCol()
-    {
-        return ( this.map_tail_col > this.map_head_col ? this.map_tail_col : this.map_head_col ) + 1;
+        return this.getKeyIndex( this.vector_coords.length - 1 );
     }
 
     private checkGridMinMax()
     {
-        if ( this.getMinRow() < this.grid_min_row )
+        for ( let cur_index : number = 0; cur_index < this.vector_coords.length; cur_index++ )
         {
-            this.grid_min_row = this.getMinRow();
-        }
+            if (  this.vector_coords[ cur_index ]!.row < this.grid_min_row )
+            {
+                this.grid_min_row = this.vector_coords[ cur_index ]!.row - 2;
+            }
 
-        if ( this.getMinCol() < this.grid_min_col )
-        {
-            this.grid_min_col = this.getMinCol();
-        }
+            if ( this.vector_coords[ cur_index ]!.col < this.grid_min_col )
+            {
+                this.grid_min_col = this.vector_coords[ cur_index ]!.col - 2;
+            }
 
-        if ( this.getMaxRow() > this.grid_max_rows )
-        {
-            this.grid_max_rows = this.getMaxRow();
-        }
+            if ( this.vector_coords[ cur_index ]!.row > this.grid_max_rows )
+            {
+                this.grid_max_rows = this.vector_coords[ cur_index ]!.row + 1;
+            }
 
-        if ( this.getMaxCol() > this.grid_max_cols )
-        {
-            this.grid_max_cols = this.getMaxCol();
+            if ( this.vector_coords[ cur_index ]!.col > this.grid_max_cols )
+            {
+                this.grid_max_cols = this.vector_coords[ cur_index ]!.col + 1;
+            }
         }
     }
  
@@ -221,26 +201,38 @@ class RopeBridge
         return getDebugMap( this.getHeadMap(), this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
     }
 
-
     public getDebugGridTail() : string 
     {
         return getDebugMap( this.getTailMap(), this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
     }
 
-    public getDebugMaps() : string 
+    public getDebugGridBoth() : string 
     {
-        let map_both      : PropertieMap = {};
+        let map_both : PropertieMap = {};
 
+         for ( let cur_index : number = 2; cur_index < this.vector_coords.length; cur_index++ )
+        {
+            map_both[ this.getKeyIndex( cur_index ) ] = this.vector_coords[ cur_index ]!.char;
+        }
+       
         map_both[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
+        
         map_both[ this.getMapTailKey() ] = CHAR_MAP_TAIL;
 
-        let dbg_head_map : string = this.getDebugGridHead(); 
+        map_both[ this.getKeyIndex( 0 ) ] = this.vector_coords[ 0 ]!.char;
 
-        let dbg_tail_map : string = this.getDebugGridTail(); 
+        return getDebugMap( map_both, this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
+    }
 
-        let dbg_map_both : string = getDebugMap( map_both,          this.grid_min_row, this.grid_min_col, this.grid_max_rows, this.grid_max_cols ); 
+    public getDebugMaps() : string 
+    {
+        let dbg_map_head : string = this.getDebugGridHead(); 
 
-        return combineStrings( combineStrings( dbg_head_map, dbg_tail_map ), dbg_map_both ) + "\n";
+        let dbg_map_tail : string = this.getDebugGridTail(); 
+
+        let dbg_map_both : string = this.getDebugGridBoth(); 
+
+        return combineStrings( combineStrings( dbg_map_head, dbg_map_tail ), dbg_map_both ) + "\n";
     }
    
     public moveHead( pDirection : string, pAmount : string, pKnzDebug : boolean = false )
@@ -250,6 +242,7 @@ class RopeBridge
         let move_value     : number = parseInt( pAmount );
 
         let delta_move_row : number = 0;
+
         let delta_move_col : number = 0;
 
         let step_direction : number = 0;
@@ -263,15 +256,19 @@ class RopeBridge
         {
             for( let step_count = 0; step_count < delta_move_row; step_count++ )
             {
-                this.map_head_row += step_direction;
+                this.vector_coords[ INDEX_HEAD ]!.row  += step_direction;
 
                 this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
 
-                let dbg_string1 = dbg_string + this.moveTail( pKnzDebug );
+                let dbg_string_temp = dbg_string + this.moveTails( pKnzDebug );
+
+                this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
+
+                this.map_head[ this.getKeyIndex( INDEX_START ) ] = "S";
 
                 if ( pKnzDebug )
                 {
-                    wl( this.getDebugMaps() + "\n" + dbg_string1 + "\n" );
+                    wl( this.getDebugMaps() + "\n" + dbg_string_temp + "\n" );
                 }
             }
         }
@@ -280,21 +277,39 @@ class RopeBridge
         {
             for( let step_count = 0; step_count < delta_move_col; step_count++ )
             {
-                this.map_head_col += step_direction;
+                this.vector_coords[ INDEX_HEAD ]!.col += step_direction;
+
+                let dbg_string_temp = dbg_string + this.moveTails( pKnzDebug );
 
                 this.map_head[ this.getMapHeadKey() ] = CHAR_MAP_HEAD;
 
-                let dbg_string1 = dbg_string + this.moveTail( pKnzDebug );
+                this.map_head[ this.getKeyIndex( INDEX_START ) ] = "S";
 
                 if ( pKnzDebug )
                 {
-                    wl( this.getDebugMaps() + "\n" + dbg_string1 + "\n" );
+                    wl( this.getDebugMaps() + "\n" + dbg_string_temp + "\n" );
                 }
             }
         }
+
+        this.checkGridMinMax();
     }
 
-    private moveTail( pKnzDebug : boolean ) : string 
+    private moveTails( pKnzDebug : boolean ) : string 
+    {
+        let dbg_string : string = "";
+
+        let cr_str : string = "\n";
+
+        for ( let cur_index : number = 2; cur_index < this.vector_coords.length; cur_index++ )
+        {
+            dbg_string += cr_str + this.moveTail( cur_index, pKnzDebug );
+        }
+
+        return dbg_string;
+    }
+
+    private moveTail( pIndexCur : number, pKnzDebug : boolean ) : string 
     {
         /*
          * Head-Position is leading
@@ -307,14 +322,14 @@ class RopeBridge
          * Delta      -3  3  0
          * Direction  -1  1  0
          */
-        let delta_row_diff : number = this.map_head_row - this.map_tail_row;
+        let delta_row_diff : number = this.vector_coords[ pIndexCur - 1 ]!.row - this.vector_coords[ pIndexCur ]!.row;
 
         let direction_row  : number = Math.sign( delta_row_diff );
 
         let delta_row_step : number = 0;
 
 
-        let delta_col_diff : number = this.map_head_col - this.map_tail_col;
+        let delta_col_diff : number = this.vector_coords[ pIndexCur - 1 ]!.col - this.vector_coords[ pIndexCur ]!.col;
 
         let direction_col  : number = Math.sign( delta_col_diff );
 
@@ -340,22 +355,28 @@ class RopeBridge
             delta_row_step = direction_row;
         }
 
-        let dbg_string : string = pKnzDebug ? " " + this.getMapHeadKey() + " " + this.getMapTailKey() : "";
+        let dbg_string : string = pKnzDebug ? " " + padR( this.getKeyIndex( pIndexCur - 1 ), 7 )  + " " + padR( this.getKeyIndex( pIndexCur ), 7 ) : "";
         
-        this.map_tail_row += delta_row_step;
-        this.map_tail_col += delta_col_step;
+        this.vector_coords[ pIndexCur ]!.row += delta_row_step;
+
+        this.vector_coords[ pIndexCur ]!.col += delta_col_step;
 
         if ( pKnzDebug )
         {
-            dbg_string += " diff R "   + pad( delta_row_diff, 2 ) + "  "  + pad( direction_row,  2 );
-            dbg_string += "  C "       + pad( delta_col_diff, 2 ) + "  "  + pad( direction_col,  2 );
-            dbg_string += "  Move  R " + pad( delta_row_step, 2 ) + " C " + pad( delta_col_step, 2 );
-            dbg_string += " To " + this.getMapTailKey();
+            dbg_string += " diff R "   + padL( delta_row_diff, 2 ) + "  "  + padL( direction_row,  2 );
+            dbg_string += "  C "       + padL( delta_col_diff, 2 ) + "  "  + padL( direction_col,  2 );
+            dbg_string += "  Move  R " + padL( delta_row_step, 2 ) + " C " + padL( delta_col_step, 2 );
+            dbg_string += " To " + this.getKeyIndex( pIndexCur );
         }
 
-        this.map_tail[ this.getMapTailKey() ] = CHAR_MAP_TAIL;
-
-        this.checkGridMinMax();
+        if ( this.vector_coords[ pIndexCur ]!.char === CHAR_MAP_TAIL )
+        {
+            this.map_tail[ this.getKeyIndex( pIndexCur) ] = this.vector_coords[ pIndexCur ]!.char;
+        }
+        else
+        {
+            this.map_head[ this.getKeyIndex( pIndexCur) ] = this.vector_coords[ pIndexCur ]!.char;
+        }
 
         return dbg_string
     }
@@ -366,20 +387,48 @@ class RopeBridge
     }
 }
 
-
-function wl( pString : string ) // wl = short for "writeLog"
+function wl( pString : string )
 {
     console.log( pString );
+
+    if ( file_write_on )
+    {
+        file_string +="\n" + pString;
+    }
 }
 
 
-function pad( pInput : string | number, pPadLeft : number ) : string 
+function writeFile( pFileName: string, pFileData: string ): void 
+{
+    if ( file_write_on )
+    {
+        fs.writeFile( pFileName, pFileData, { flag: "w" } );
+
+        console.log( "File " + pFileName + " created!" );
+    }
+}
+
+
+function padL( pInput : string | number, pPadLeft : number ) : string 
 {
     let str_result : string = pInput.toString();
 
-    while (str_result.length < pPadLeft)
+    while ( str_result.length < pPadLeft )
     { 
         str_result = " " + str_result;
+    }
+
+    return str_result;
+}
+
+
+function padR( pInput : string | number, pPadRight : number ) : string 
+{
+    let str_result : string = pInput.toString();
+
+    while ( str_result.length < pPadRight )
+    { 
+        str_result = str_result + " ";
     }
 
     return str_result;
@@ -411,7 +460,7 @@ function getDebugMap( pHashMap : PropertieMap, pMinRows : number, pMinCols : num
 {
     let str_result : string = "";
 
-    str_result += pad( " ", 3 ) + "  ";
+    str_result += padL( " ", 3 ) + "  ";
 
     for ( let cur_col = 0; cur_col < pMaxCols; cur_col++ )
     {
@@ -421,7 +470,7 @@ function getDebugMap( pHashMap : PropertieMap, pMinRows : number, pMinCols : num
     for ( let cur_row = pMinRows; cur_row < pMaxRows; cur_row++ )
     {
         str_result += "\n";
-        str_result += pad( cur_row, 3 ) + "  ";
+        str_result += padL( cur_row, 3 ) + "  ";
 
         for ( let cur_col = pMinCols; cur_col < pMaxCols; cur_col++ )
         {
@@ -465,13 +514,29 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
     let result_part_01   : number = 0;
     let result_part_02   : number = 0;
     
-    let rope_bridge      : RopeBridge = new RopeBridge( start_row, start_col );
+    let rope_bridge_part_1 : RopeBridge = new RopeBridge( start_row, start_col, 2  );
+
+    let rope_bridge_part_2 : RopeBridge = new RopeBridge( start_row, start_col, 10 );
 
     for ( const cur_input_str of pArray ) 
     {
         let [ s_direction, s_value ] = cur_input_str.trim().split( " " );
 
-        rope_bridge.moveHead( s_direction!, s_value!, pKnzDebug );
+        rope_bridge_part_1.moveHead( s_direction!, s_value!, pKnzDebug );
+    }
+
+    /*
+     * Two seperate loops for the movements for part 1 and part 2, to prevent 
+     * an entanglement with the debug-output.
+     */
+
+    wl( "" );
+
+    for ( const cur_input_str of pArray ) 
+    {
+        let [ s_direction, s_value ] = cur_input_str.trim().split( " " );
+
+        rope_bridge_part_2.moveHead( s_direction!, s_value!, pKnzDebug );
     }
 
     /*
@@ -480,19 +545,26 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
      * *******************************************************************************************************
      */
 
-    result_part_01 = rope_bridge.countTailPath();
+    result_part_01 = rope_bridge_part_1.countTailPath();
+
+    result_part_02 = rope_bridge_part_2.countTailPath();
 
     wl( "" );
 
     if ( pKnzDebug )
     {
         wl( "" );
-        wl( rope_bridge.getDebugMaps() );
+        wl( rope_bridge_part_1.getDebugMaps() );
         wl( "" );
     }
 
     wl( "Result Part 1 = " + result_part_01 );
     wl( "Result Part 2 = " + result_part_02 );
+    wl( "" );
+    wl( "" );
+    wl( "" );
+
+    //writeFile( "/home/ea234/typescript/day09_log_file.txt", file_string );
 }
 
 
@@ -546,11 +618,29 @@ function getTestArray1() : string[]
     return array_test;
 }
 
+
+function getTestArray2() : string[] 
+{
+    const array_test: string[] = [];
+
+    array_test.push( "R 5" );
+    array_test.push( "U 8" );
+    array_test.push( "L 8" );
+    array_test.push( "D 3" );
+    array_test.push( "R 17" );
+    array_test.push( "D 10" );
+    array_test.push( "L 25" );
+    array_test.push( "U 20" );
+
+    return array_test;
+}
+
+
 wl( "" );
 wl( "Day 09 - Rope Bridge" );
 wl( "" );
 
-calcArray( getTestArray1(), true );
+calcArray( getTestArray2(), true );
 
 //checkReaddatei();
 
@@ -815,4 +905,4079 @@ wl( "Day 09 - Ende" );
  * 
  * Day 09 - Ende
  * 
+ * 
+ * ----------------------------------------------------------------------------
+ * 
+
+
+ * Day 09 - Rope Bridge
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C2    R2C0    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C1
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C3    R2C1    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C2
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C4    R2C2    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C3
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C5    R2C3    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0             0             0        
+ *   1       H     1             1       H
+ *   2  SHHHHH     2  TTTTT      2  S   T 
+ * 
+ * Direction U Amount 8 
+ *  R1C5    R2C4    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C4
+ * 
+ *      012345        012345        012345
+ *   0       H     0             0       H
+ *   1       H     1       T     1       T
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R0C5    R2C4    diff R -2  -1  C  1   1  Move  R -1 C  1 To R1C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0       T
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-1C5   R1C5    diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-2C5   R0C5    diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-3C5   R-1C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-4C5   R-2C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-5C5   R-3C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C5
+ * 
+ *      012345        012345        012345
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-6C5   R-4C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C5
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6      HH    -6            -6      H 
+ *  -5       H    -5       T    -5       T
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C4   R-5C5   diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-5C5
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6     HHH    -6      T     -6     HT 
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C3   R-5C5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-6C4
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6    HHHH    -6     TT     -6    HT  
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C2   R-6C4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C3
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6   HHHHH    -6    TTT     -6   HT   
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C1   R-6C3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C2
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  HHHHHH    -6   TTTT     -6  HT    
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C0   R-6C2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C1
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  HHHHHH    -6  TTTTT     -6  T     
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-1  R-6C1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C0
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  HHHHHH    -6  TTTTT     -6        
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-2  R-6C0   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C-1
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  HHHHHH    -6  TTTTT     -6        
+ *  -5       H    -5       T    -5        
+ *  -4       H    -4       T    -4        
+ *  -3       H    -3       T    -3        
+ *  -2       H    -2       T    -2        
+ *  -1       H    -1       T    -1        
+ *   0       H     0       T     0        
+ *   1       H     1       T     1        
+ *   2  SHHHHH     2  TTTTT      2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-3  R-6C-1  diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C-2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6     T       
+ *  -5    H       H    -5            T    -5    H        
+ *  -4            H    -4            T    -4             
+ *  -3            H    -3            T    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-5C-3  R-6C-2  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-6C-2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5    T        
+ *  -4    H       H    -4            T    -4    H        
+ *  -3            H    -3            T    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-4C-3  R-6C-2  diff R  2   1  C -1  -1  Move  R  1 C -1 To R-5C-3
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4    T        
+ *  -3    H       H    -3            T    -3    H        
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-3C-3  R-5C-3  diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C-3
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4    T        
+ *  -3    HH      H    -3            T    -3     H       
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C-2  R-4C-3  diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C-3
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHH     H    -3     T      T    -3     TH      
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C-1  R-4C-3  diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C-2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHH    H    -3     TT     T    -3      TH     
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C0   R-3C-2  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C-1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHH   H    -3     TTT    T    -3       TH    
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C1   R-3C-1  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C0
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHH  H    -3     TTTT   T    -3        TH   
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C2   R-3C0   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHH H    -3     TTTTT  T    -3         TH  
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTT T    -3          TH 
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3           TH
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3            T
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C11  R-3C9   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C10
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C12  R-3C10  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C11
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C13  R-3C11  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C12
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    HHHHHHHHH    -6     TTTTTTT     -6             
+ *  -5    H       H    -5    T       T    -5             
+ *  -4    H       H    -4    T       T    -4             
+ *  -3    HHHHHHHHH    -3     TTTTTTTT    -3             
+ *  -2            H    -2            T    -2             
+ *  -1            H    -1            T    -1             
+ *   0            H     0            T     0             
+ *   1            H     1            T     1             
+ *   2       SHHHHH     2       TTTTT      2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C14  R-3C12  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C13
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                    T 
+ *  -2            H        H    -2            T             -2                     H
+ *  -1            H             -1            T             -1                      
+ *   0            H              0            T              0                      
+ *   1            H              1            T              1                      
+ *   2       SHHHHH              2       TTTTT               2       S              
+ * 
+ * Direction D Amount 10 
+ *  R-2C14  R-3C13  diff R  1   1  C  1   1  Move  R  0 C  0 To R-3C13
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                     T
+ *  -1            H        H    -1            T             -1                     H
+ *   0            H              0            T              0                      
+ *   1            H              1            T              1                      
+ *   2       SHHHHH              2       TTTTT               2       S              
+ * 
+ * Direction D Amount 10 
+ *  R-1C14  R-3C13  diff R  2   1  C  1   1  Move  R  1 C  1 To R-2C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                     T
+ *   0            H        H     0            T              0                     H
+ *   1            H              1            T              1                      
+ *   2       SHHHHH              2       TTTTT               2       S              
+ * 
+ * Direction D Amount 10 
+ *  R0C14   R-2C14  diff R  2   1  C  0   0  Move  R  1 C  0 To R-1C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                     T
+ *   1            H        H     1            T              1                     H
+ *   2       SHHHHH              2       TTTTT               2       S              
+ * 
+ * Direction D Amount 10 
+ *  R1C14   R-1C14  diff R  2   1  C  0   0  Move  R  1 C  0 To R0C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                     T
+ *   2       SHHHHH        H     2       TTTTT               2       S             H
+ * 
+ * Direction D Amount 10 
+ *  R2C14   R0C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R1C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S             T
+ * 
+ * Direction D Amount 10 
+ *  R3C14   R1C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R2C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ * 
+ * Direction D Amount 10 
+ *  R4C14   R2C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R3C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ * 
+ * Direction D Amount 10 
+ *  R5C14   R3C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R4C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ * 
+ * Direction D Amount 10 
+ *  R6C14   R4C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R5C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ * 
+ * Direction D Amount 10 
+ *  R7C14   R5C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R6C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                     T
+ *   7                    HH     7                           7                    H 
+ * 
+ * Direction L Amount 25 
+ *  R7C13   R6C14   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C14
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7                   HHH     7                    T      7                   HT 
+ * 
+ * Direction L Amount 25 
+ *  R7C12   R6C14   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C13
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7                  HHHH     7                   TT      7                  HT  
+ * 
+ * Direction L Amount 25 
+ *  R7C11   R7C13   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C12
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7                 HHHHH     7                  TTT      7                 HT   
+ * 
+ * Direction L Amount 25 
+ *  R7C10   R7C12   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7                HHHHHH     7                 TTTT      7                HT    
+ * 
+ * Direction L Amount 25 
+ *  R7C9    R7C11   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7               HHHHHHH     7                TTTTT      7               HT     
+ * 
+ * Direction L Amount 25 
+ *  R7C8    R7C10   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7              HHHHHHHH     7               TTTTTT      7              HT      
+ * 
+ * Direction L Amount 25 
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7             HHHHHHHHH     7              TTTTTTT      7             HT       
+ * 
+ * Direction L Amount 25 
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7            HHHHHHHHHH     7             TTTTTTTT      7            HT        
+ * 
+ * Direction L Amount 25 
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7           HHHHHHHHHHH     7            TTTTTTTTT      7           HT         
+ * 
+ * Direction L Amount 25 
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7          HHHHHHHHHHHH     7           TTTTTTTTTT      7          HT          
+ * 
+ * Direction L Amount 25 
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7         HHHHHHHHHHHHH     7          TTTTTTTTTTT      7         HT           
+ * 
+ * Direction L Amount 25 
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7        HHHHHHHHHHHHHH     7         TTTTTTTTTTTT      7        HT            
+ * 
+ * Direction L Amount 25 
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7       HHHHHHHHHHHHHHH     7        TTTTTTTTTTTTT      7       HT             
+ * 
+ * Direction L Amount 25 
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7      HHHHHHHHHHHHHHHH     7       TTTTTTTTTTTTTT      7      HT              
+ * 
+ * Direction L Amount 25 
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7     HHHHHHHHHHHHHHHHH     7      TTTTTTTTTTTTTTT      7     HT               
+ * 
+ * Direction L Amount 25 
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7    HHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTT      7    HT                
+ * 
+ * Direction L Amount 25 
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7   HHHHHHHHHHHHHHHHHHH     7    TTTTTTTTTTTTTTTTT      7   HT                 
+ * 
+ * Direction L Amount 25 
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7   TTTTTTTTTTTTTTTTTT      7  HT                  
+ * 
+ * Direction L Amount 25 
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7  T                   
+ * 
+ * Direction L Amount 25 
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7                      
+ * 
+ * Direction L Amount 25 
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7                      
+ * 
+ * Direction L Amount 25 
+ *  R7C-8   R7C-6   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7                      
+ * 
+ * Direction L Amount 25 
+ *  R7C-9   R7C-7   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7                      
+ * 
+ * Direction L Amount 25 
+ *  R7C-10  R7C-8   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    HHHHHHHHH             -6     TTTTTTT              -6                      
+ *  -5    H       H             -5    T       T             -5                      
+ *  -4    H       H             -4    T       T             -4                      
+ *  -3    HHHHHHHHHHHHHHHHHH    -3     TTTTTTTTTTTTTTTT     -3                      
+ *  -2            H        H    -2            T        T    -2                      
+ *  -1            H        H    -1            T        T    -1                      
+ *   0            H        H     0            T        T     0                      
+ *   1            H        H     1            T        T     1                      
+ *   2       SHHHHH        H     2       TTTTT         T     2       S              
+ *   3                     H     3                     T     3                      
+ *   4                     H     4                     T     4                      
+ *   5                     H     5                     T     5                      
+ *   6                     H     6                     T     6                      
+ *   7  HHHHHHHHHHHHHHHHHHHH     7  TTTTTTTTTTTTTTTTTTT      7                      
+ * 
+ * Direction L Amount 25 
+ *  R7C-11  R7C-9   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1                    H        H     1                    T        T     1                              
+ *   2               SHHHHH        H     2               TTTTT         T     2               S              
+ *   3                             H     3                             T     3                              
+ *   4                             H     4                             T     4                              
+ *   5                             H     5                             T     5                              
+ *   6    H                        H     6                             T     6    H                         
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7     T                        
+ * 
+ * Direction U Amount 20 
+ *  R6C-11  R7C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R7C-10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1                    H        H     1                    T        T     1                              
+ *   2               SHHHHH        H     2               TTTTT         T     2               S              
+ *   3                             H     3                             T     3                              
+ *   4                             H     4                             T     4                              
+ *   5    H                        H     5                             T     5    H                         
+ *   6    H                        H     6    T                        T     6    T                         
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R5C-11  R7C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R6C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1                    H        H     1                    T        T     1                              
+ *   2               SHHHHH        H     2               TTTTT         T     2               S              
+ *   3                             H     3                             T     3                              
+ *   4    H                        H     4                             T     4    H                         
+ *   5    H                        H     5    T                        T     5    T                         
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R4C-11  R6C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R5C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1                    H        H     1                    T        T     1                              
+ *   2               SHHHHH        H     2               TTTTT         T     2               S              
+ *   3    H                        H     3                             T     3    H                         
+ *   4    H                        H     4    T                        T     4    T                         
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R3C-11  R5C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R4C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1                    H        H     1                    T        T     1                              
+ *   2    H          SHHHHH        H     2               TTTTT         T     2    H          S              
+ *   3    H                        H     3    T                        T     3    T                         
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R2C-11  R4C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0                    H        H     0                    T        T     0                              
+ *   1    H               H        H     1                    T        T     1    H                         
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2    T          S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R1C-11  R3C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1                    H        H    -1                    T        T    -1                              
+ *   0    H               H        H     0                    T        T     0    H                         
+ *   1    H               H        H     1    T               T        T     1    T                         
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2                    H        H    -2                    T        T    -2                              
+ *  -1    H               H        H    -1                    T        T    -1    H                         
+ *   0    H               H        H     0    T               T        T     0    T                         
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3            HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2                    T        T    -2    H                         
+ *  -1    H               H        H    -1    T               T        T    -1    T                         
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4            H       H             -4            T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3             TTTTTTTTTTTTTTTT     -3    H                         
+ *  -2    H               H        H    -2    T               T        T    -2    T                         
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5            H       H             -5            T       T             -5                              
+ *  -4    H       H       H             -4            T       T             -4    H                         
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3    T                         
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            HHHHHHHHH             -6             TTTTTTT              -6                              
+ *  -5    H       H       H             -5            T       T             -5    H                         
+ *  -4    H       H       H             -4    T       T       T             -4    T                         
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6    H       HHHHHHHHH             -6             TTTTTTT              -6    H                         
+ *  -5    H       H       H             -5    T       T       T             -5    T                         
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7    H                             -7                                  -7    H                         
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6    T                         
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8                                  -8    H                         
+ *  -7    H                             -7    T                             -7    T                         
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8    T                             -8    T                         
+ *  -7    H                             -7    T                             -7                              
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8    T                             -8                              
+ *  -7    H                             -7    T                             -7                              
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-10C-11 R-8C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-9C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8    T                             -8                              
+ *  -7    H                             -7    T                             -7                              
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-11C-11 R-9C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-10C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8    T                             -8                              
+ *  -7    H                             -7    T                             -7                              
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-12C-11 R-10C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-11C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8    T                             -8                              
+ *  -7    H                             -7    T                             -7                              
+ *  -6    H       HHHHHHHHH             -6    T        TTTTTTT              -6                              
+ *  -5    H       H       H             -5    T       T       T             -5                              
+ *  -4    H       H       H             -4    T       T       T             -4                              
+ *  -3    H       HHHHHHHHHHHHHHHHHH    -3    T        TTTTTTTTTTTTTTTT     -3                              
+ *  -2    H               H        H    -2    T               T        T    -2                              
+ *  -1    H               H        H    -1    T               T        T    -1                              
+ *   0    H               H        H     0    T               T        T     0                              
+ *   1    H               H        H     1    T               T        T     1                              
+ *   2    H          SHHHHH        H     2    T          TTTTT         T     2               S              
+ *   3    H                        H     3    T                        T     3                              
+ *   4    H                        H     4    T                        T     4                              
+ *   5    H                        H     5    T                        T     5                              
+ *   6    H                        H     6    T                        T     6                              
+ *   7    HHHHHHHHHHHHHHHHHHHHHHHHHH     7     TTTTTTTTTTTTTTTTTTTTTTTT      7                              
+ * 
+ * Direction U Amount 20 
+ *  R-13C-11 R-11C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-12C-11
+ * 
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C2    R2C0    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C1
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C3    R2C1    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C2
+ *  R2C2    R2C0    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C1
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C4    R2C2    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C3
+ *  R2C3    R2C1    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C2
+ *  R2C2    R2C0    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C1
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      0        0        0
+ *   0        0        0   
+ * 
+ * Direction R Amount 5 
+ *  R2C5    R2C3    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C4
+ *  R2C4    R2C2    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C3
+ *  R2C3    R2C1    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C2
+ *  R2C2    R2C0    diff R  0   0  C  2   1  Move  R  0 C  1 To R2C1
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0             0             0        
+ *   1       H     1             1       H
+ *   2  S4321H     2  T          2  S4321 
+ * 
+ * Direction U Amount 8 
+ *  R1C5    R2C4    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C4
+ *  R2C4    R2C3    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C3
+ *  R2C3    R2C2    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C2
+ *  R2C2    R2C1    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C1
+ *  R2C1    R2C0    diff R  0   0  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0       H     0             0       H
+ *   1   54321     1             1   54321
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R0C5    R2C4    diff R -2  -1  C  1   1  Move  R -1 C  1 To R1C5
+ *  R1C5    R2C3    diff R -1  -1  C  2   1  Move  R -1 C  1 To R1C4
+ *  R1C4    R2C2    diff R -1  -1  C  2   1  Move  R -1 C  1 To R1C3
+ *  R1C3    R2C1    diff R -1  -1  C  2   1  Move  R -1 C  1 To R1C2
+ *  R1C2    R2C0    diff R -1  -1  C  2   1  Move  R -1 C  1 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0       1     0             0       1
+ *   1   54321     1             1   5432 
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-1C5   R1C5    diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C5
+ *  R0C5    R1C4    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C4
+ *  R1C4    R1C3    diff R  0   0  C  1   1  Move  R  0 C  0 To R1C3
+ *  R1C3    R1C2    diff R  0   0  C  1   1  Move  R  0 C  0 To R1C2
+ *  R1C2    R1C1    diff R  0   0  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0    5432     0             0    5432
+ *   1   64321     1             1   6    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-2C5   R0C5    diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C5
+ *  R-1C5   R1C4    diff R -2  -1  C  1   1  Move  R -1 C  1 To R0C5
+ *  R0C5    R1C3    diff R -1  -1  C  2   1  Move  R -1 C  1 To R0C4
+ *  R0C4    R1C2    diff R -1  -1  C  2   1  Move  R -1 C  1 To R0C3
+ *  R0C3    R1C1    diff R -1  -1  C  2   1  Move  R -1 C  1 To R0C2
+ *  R0C2    R2C0    diff R -2  -1  C  2   1  Move  R -1 C  1 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0    5432     0             0    543 
+ *   1   64321     1             1   6    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-3C5   R-1C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C5
+ *  R-2C5   R0C5    diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C5
+ *  R-1C5   R0C4    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C4
+ *  R0C4    R0C3    diff R  0   0  C  1   1  Move  R  0 C  0 To R0C3
+ *  R0C3    R0C2    diff R  0   0  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0    6432     0             0    6   
+ *   1   74321     1             1   7    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-4C5   R-2C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C5
+ *  R-3C5   R-1C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C5
+ *  R-2C5   R0C4    diff R -2  -1  C  1   1  Move  R -1 C  1 To R-1C5
+ *  R-1C5   R0C3    diff R -1  -1  C  2   1  Move  R -1 C  1 To R-1C4
+ *  R-1C4   R0C2    diff R -1  -1  C  2   1  Move  R -1 C  1 To R-1C3
+ *  R-1C3   R1C1    diff R -2  -1  C  2   1  Move  R -1 C  1 To R0C2
+ *  R0C2    R2C0    diff R -2  -1  C  2   1  Move  R -1 C  1 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0    6432     0             0    6   
+ *   1   74321     1             1   7    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-5C5   R-3C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C5
+ *  R-4C5   R-2C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C5
+ *  R-3C5   R-1C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C5
+ *  R-2C5   R-1C4   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-1C4
+ *  R-1C4   R-1C3   diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C3
+ *  R-1C3   R0C2    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ *  R2C0    R2C0    diff R  0   0  C  0   0  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *   0    7432     0             0    7   
+ *   1   84321     1             1   8    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction U Amount 8 
+ *  R-6C5   R-4C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C5
+ *  R-5C5   R-3C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C5
+ *  R-4C5   R-2C5   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C5
+ *  R-3C5   R-1C4   diff R -2  -1  C  1   1  Move  R -1 C  1 To R-2C5
+ *  R-2C5   R-1C3   diff R -1  -1  C  2   1  Move  R -1 C  1 To R-2C4
+ *  R-2C4   R0C2    diff R -2  -1  C  2   1  Move  R -1 C  1 To R-1C3
+ *  R-1C3   R1C1    diff R -2  -1  C  2   1  Move  R -1 C  1 To R0C2
+ *  R0C2    R2C0    diff R -2  -1  C  2   1  Move  R -1 C  1 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6      HH    -6            -6      H 
+ *  -5       1    -5            -5       1
+ *  -4       2    -4            -4       2
+ *  -3       3    -3            -3       3
+ *  -2      54    -2            -2      54
+ *  -1     643    -1            -1     6  
+ *   0    7432     0             0    7   
+ *   1   84321     1             1   8    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C4   R-5C5   diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-5C5
+ *  R-5C5   R-4C5   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C5
+ *  R-4C5   R-3C5   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C5
+ *  R-3C5   R-2C5   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C5
+ *  R-2C5   R-2C4   diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C4
+ *  R-2C4   R-1C3   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-1C3
+ *  R-1C3   R0C2    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6     H1H    -6            -6     H1 
+ *  -5      21    -5            -5      2 
+ *  -4      32    -4            -4      3 
+ *  -3      43    -3            -3      4 
+ *  -2      54    -2            -2      5 
+ *  -1     643    -1            -1     6  
+ *   0    7432     0             0    7   
+ *   1   84321     1             1   8    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C3   R-5C5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-6C4
+ *  R-6C4   R-4C5   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-5C4
+ *  R-5C4   R-3C5   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-4C4
+ *  R-4C4   R-2C5   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-3C4
+ *  R-3C4   R-2C4   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C4
+ *  R-2C4   R-1C3   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-1C3
+ *  R-1C3   R0C2    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6    H11H    -6            -6    H1  
+ *  -5      21    -5            -5      2 
+ *  -4      32    -4            -4      3 
+ *  -3      43    -3            -3      4 
+ *  -2      54    -2            -2      5 
+ *  -1     643    -1            -1     6  
+ *   0    7432     0             0    7   
+ *   1   84321     1             1   8    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C2   R-6C4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C3
+ *  R-6C3   R-5C4   diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-5C4
+ *  R-5C4   R-4C4   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C4
+ *  R-4C4   R-3C4   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C4
+ *  R-3C4   R-2C4   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C4
+ *  R-2C4   R-1C3   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-1C3
+ *  R-1C3   R0C2    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ *  R1C1    R2C0    diff R -1  -1  C  1   1  Move  R  0 C  0 To R2C0
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6   H121H    -6            -6   H12  
+ *  -5     321    -5            -5     3  
+ *  -4     432    -4            -4     4  
+ *  -3     543    -3            -3     5  
+ *  -2     654    -2            -2     6  
+ *  -1     743    -1            -1     7  
+ *   0    8432     0             0    8   
+ *   1   84321     1   T         1   T    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C1   R-6C3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C2
+ *  R-6C2   R-5C4   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-6C3
+ *  R-6C3   R-4C4   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-5C3
+ *  R-5C3   R-3C4   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-4C3
+ *  R-4C3   R-2C4   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-3C3
+ *  R-3C3   R-1C3   diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C3
+ *  R-2C3   R0C2    diff R -2  -1  C  1   1  Move  R -1 C  1 To R-1C3
+ *  R-1C3   R1C1    diff R -2  -1  C  2   1  Move  R -1 C  1 To R0C2
+ *  R0C2    R2C0    diff R -2  -1  C  2   1  Move  R -1 C  1 To R1C1
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  H1221H    -6            -6  H12   
+ *  -5     321    -5            -5     3  
+ *  -4     432    -4            -4     4  
+ *  -3     543    -3            -3     5  
+ *  -2     654    -2            -2     6  
+ *  -1     743    -1            -1     7  
+ *   0    8432     0             0    8   
+ *   1   84321     1   T         1   T    
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C0   R-6C2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C1
+ *  R-6C1   R-6C3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C2
+ *  R-6C2   R-5C3   diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-5C3
+ *  R-5C3   R-4C3   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C3
+ *  R-4C3   R-3C3   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C3
+ *  R-3C3   R-2C3   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C3
+ *  R-2C3   R-1C3   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C3
+ *  R-1C3   R0C2    diff R -1  -1  C  1   1  Move  R  0 C  0 To R0C2
+ *  R0C2    R1C1    diff R -1  -1  C  1   1  Move  R  0 C  0 To R1C1
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  12321H    -6            -6  123   
+ *  -5    4321    -5            -5    4   
+ *  -4    5432    -4            -4    5   
+ *  -3    6543    -3            -3    6   
+ *  -2    7654    -2            -2    7   
+ *  -1    8743    -1            -1    8   
+ *   0    8432     0    T        0    T   
+ *   1   84321     1   T         1        
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-1  R-6C1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C0
+ *  R-6C0   R-6C2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C1
+ *  R-6C1   R-5C3   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-6C2
+ *  R-6C2   R-4C3   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-5C2
+ *  R-5C2   R-3C3   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-4C2
+ *  R-4C2   R-2C3   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-3C2
+ *  R-3C2   R-1C3   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-2C2
+ *  R-2C2   R0C2    diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C2
+ *  R-1C2   R1C1    diff R -2  -1  C  1   1  Move  R -1 C  1 To R0C2
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  23321H    -6            -6  23    
+ *  -5    4321    -5            -5    4   
+ *  -4    5432    -4            -4    5   
+ *  -3    6543    -3            -3    6   
+ *  -2    7654    -2            -2    7   
+ *  -1    8743    -1            -1    8   
+ *   0    8432     0    T        0    T   
+ *   1   84321     1   T         1        
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-2  R-6C0   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C-1
+ *  R-6C-1  R-6C1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C0
+ *  R-6C0   R-6C2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C1
+ *  R-6C1   R-5C2   diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-5C2
+ *  R-5C2   R-4C2   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C2
+ *  R-4C2   R-3C2   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C2
+ *  R-3C2   R-2C2   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C2
+ *  R-2C2   R-1C2   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C2
+ *  R-1C2   R0C2    diff R -1  -1  C  0   0  Move  R  0 C  0 To R0C2
+ * 
+ *      012345        012345        012345
+ *  -8            -8            -8        
+ *  -7            -7            -7        
+ *  -6  34321H    -6            -6  34    
+ *  -5   54321    -5            -5   5    
+ *  -4   65432    -4            -4   6    
+ *  -3   76543    -3            -3   7    
+ *  -2   87654    -2            -2   8    
+ *  -1    8743    -1   T        -1   T    
+ *   0    8432     0    T        0        
+ *   1   84321     1   T         1        
+ *   2  S4321H     2  T          2  S     
+ * 
+ * Direction L Amount 8 
+ *  R-6C-3  R-6C-1  diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C-2
+ *  R-6C-2  R-6C0   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C-1
+ *  R-6C-1  R-6C1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R-6C0
+ *  R-6C0   R-5C2   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-6C1
+ *  R-6C1   R-4C2   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-5C1
+ *  R-5C1   R-3C2   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-4C1
+ *  R-4C1   R-2C2   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-3C1
+ *  R-3C1   R-1C2   diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-2C1
+ *  R-2C1   R0C2    diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6     1234    
+ *  -5    H   54321    -5                 -5    H   5    
+ *  -4        65432    -4                 -4        6    
+ *  -3        76543    -3                 -3        7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-5C-3  R-6C-2  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-6C-2
+ *  R-6C-2  R-6C-1  diff R  0   0  C -1  -1  Move  R  0 C  0 To R-6C-1
+ *  R-6C-1  R-6C0   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-6C0
+ *  R-6C0   R-6C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-6C1
+ *  R-6C1   R-5C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5    12345    
+ *  -4    H   65432    -4                 -4    H   6    
+ *  -3        76543    -3                 -3        7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-4C-3  R-6C-2  diff R  2   1  C -1  -1  Move  R  1 C -1 To R-5C-3
+ *  R-5C-3  R-6C-1  diff R  1   1  C -2  -1  Move  R  1 C -1 To R-5C-2
+ *  R-5C-2  R-6C0   diff R  1   1  C -2  -1  Move  R  1 C -1 To R-5C-1
+ *  R-5C-1  R-6C1   diff R  1   1  C -2  -1  Move  R  1 C -1 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5     2345    
+ *  -4    1   65432    -4                 -4    1   6    
+ *  -3    H   76543    -3                 -3    H   7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction D Amount 3 
+ *  R-3C-3  R-5C-3  diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C-3
+ *  R-4C-3  R-5C-2  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C-2
+ *  R-5C-2  R-5C-1  diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C-1
+ *  R-5C-1  R-5C0   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5     2345    
+ *  -4    1   65432    -4                 -4    1   6    
+ *  -3    HH  76543    -3                 -3     H  7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C-2  R-4C-3  diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C-3
+ *  R-4C-3  R-5C-2  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C-2
+ *  R-5C-2  R-5C-1  diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C-1
+ *  R-5C-1  R-5C0   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5      345    
+ *  -4    12  65432    -4                 -4     2  6    
+ *  -3    H1H 76543    -3                 -3     1H 7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C-1  R-4C-3  diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C-2
+ *  R-3C-2  R-5C-2  diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C-2
+ *  R-4C-2  R-5C-1  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C-1
+ *  R-5C-1  R-5C0   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5      345    
+ *  -4    12  65432    -4                 -4     2  6    
+ *  -3    H11H76543    -3                 -3      1H7    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C0   R-3C-2  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C-1
+ *  R-3C-1  R-4C-2  diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C-2
+ *  R-4C-2  R-5C-1  diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C-1
+ *  R-5C-1  R-5C0   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5       45    
+ *  -4    123 65432    -4                 -4      3 6    
+ *  -3    H121H6543    -3                 -3      21H    
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C1   R-3C-1  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C0
+ *  R-3C0   R-4C-2  diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C-1
+ *  R-3C-1  R-5C-1  diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C-1
+ *  R-4C-1  R-5C0   diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5       45    
+ *  -4    123 65432    -4                 -4      3 6    
+ *  -3    H1227H543    -3                 -3       27H   
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C2   R-3C0   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C1
+ *  R-3C1   R-3C-1  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C0
+ *  R-3C0   R-4C-1  diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C-1
+ *  R-4C-1  R-5C0   diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C0
+ *  R-5C0   R-5C1   diff R  0   0  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5        5    
+ *  -4    123465432    -4                 -4       46    
+ *  -3    H12371H43    -3                 -3       371H  
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ *  R-3C2   R-3C0   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C1
+ *  R-3C1   R-4C-1  diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C0
+ *  R-3C0   R-5C0   diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C0
+ *  R-4C0   R-5C1   diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5        5    
+ *  -4    123465432    -4                 -4       46    
+ *  -3    H123721H3    -3                 -3        721H 
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ *  R-3C2   R-3C0   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C1
+ *  R-3C1   R-4C0   diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C0
+ *  R-4C0   R-5C1   diff R  1   1  C -1  -1  Move  R  0 C  0 To R-5C1
+ *  R-5C1   R-4C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4        6    
+ *  -3    H1237321H    -3                 -3        7321H
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ *  R-3C2   R-4C0   diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C1
+ *  R-3C1   R-5C1   diff R  2   1  C  0   0  Move  R  1 C  0 To R-4C1
+ *  R-4C1   R-4C1   diff R  0   0  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4        6    
+ *  -3    H12374321    -3                 -3        74321
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ *  R-3C2   R-4C1   diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-4C1   diff R  0   0  C  0   0  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4        6    
+ *  -3    H12375432    -3                 -3        75432
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-4C1   diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C2
+ *  R-3C2   R-4C1   diff R  1   1  C  1   1  Move  R  0 C  0 To R-4C1
+ *  R-4C1   R-3C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12376543    -3                 -3        76543
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-4C1   diff R  1   1  C  2   1  Move  R  1 C  1 To R-3C2
+ *  R-3C2   R-3C1   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C1
+ *  R-3C1   R-2C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12377654    -3                 -3         7654
+ *  -2        87654    -2                 -2        8    
+ *  -1         8743    -1        T        -1        T    
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-3C1   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C2
+ *  R-3C2   R-2C1   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-2C1
+ *  R-2C1   R-1C1   diff R -1  -1  C  0   0  Move  R  0 C  0 To R-1C1
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12378765    -3                 -3         8765
+ *  -2        87654    -2         T       -2         T   
+ *  -1         8743    -1        T        -1             
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-2C1   diff R -1  -1  C  2   1  Move  R -1 C  1 To R-3C2
+ *  R-3C2   R-1C1   diff R -2  -1  C  1   1  Move  R -1 C  1 To R-2C2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12378876    -3                 -3          876
+ *  -2        87654    -2         T       -2         T   
+ *  -1         8743    -1        T        -1             
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C11  R-3C9   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C10
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-3C2   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C3
+ *  R-3C3   R-2C2   diff R -1  -1  C  1   1  Move  R  0 C  0 To R-2C2
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12378887    -3          T      -3          T87
+ *  -2        87654    -2         T       -2             
+ *  -1         8743    -1        T        -1             
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C12  R-3C10  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C11
+ *  R-3C11  R-3C9   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C10
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ *  R-3C4   R-2C2   diff R -1  -1  C  2   1  Move  R -1 C  1 To R-3C3
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12378888    -3          TT     -3           T8
+ *  -2        87654    -2         T       -2             
+ *  -1         8743    -1        T        -1             
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C13  R-3C11  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C12
+ *  R-3C12  R-3C10  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C11
+ *  R-3C11  R-3C9   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C10
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ *  R-3C5   R-3C3   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C4
+ * 
+ *      012345        012345        012345
+ *  -8                 -8                 -8             
+ *  -7                 -7                 -7             
+ *  -6    H1234321H    -6                 -6             
+ *  -5    123454321    -5                 -5             
+ *  -4    123465432    -4                 -4             
+ *  -3    H12378888    -3          TTT    -3            T
+ *  -2        87654    -2         T       -2             
+ *  -1         8743    -1        T        -1             
+ *   0         8432     0         T        0             
+ *   1        84321     1        T         1             
+ *   2       S4321H     2       T          2       S     
+ * 
+ * Direction R Amount 17 
+ *  R-3C14  R-3C12  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C13
+ *  R-3C13  R-3C11  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C12
+ *  R-3C12  R-3C10  diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C11
+ *  R-3C11  R-3C9   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C10
+ *  R-3C10  R-3C8   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C9
+ *  R-3C9   R-3C7   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C8
+ *  R-3C8   R-3C6   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C7
+ *  R-3C7   R-3C5   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C6
+ *  R-3C6   R-3C4   diff R  0   0  C  2   1  Move  R  0 C  1 To R-3C5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3            T87654321 
+ *  -2        87654        H    -2         T                -2                     H
+ *  -1         8743             -1        T                 -1                      
+ *   0         8432              0         T                 0                      
+ *   1        84321              1        T                  1                      
+ *   2       S4321H              2       T                   2       S              
+ * 
+ * Direction D Amount 10 
+ *  R-2C14  R-3C13  diff R  1   1  C  1   1  Move  R  0 C  0 To R-3C13
+ *  R-3C13  R-3C12  diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C12
+ *  R-3C12  R-3C11  diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C11
+ *  R-3C11  R-3C10  diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C10
+ *  R-3C10  R-3C9   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C9
+ *  R-3C9   R-3C8   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C8
+ *  R-3C8   R-3C7   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C7
+ *  R-3C7   R-3C6   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C6
+ *  R-3C6   R-3C5   diff R  0   0  C  1   1  Move  R  0 C  0 To R-3C5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2             T87654321
+ *  -1         8743        H    -1        T                 -1                     H
+ *   0         8432              0         T                 0                      
+ *   1        84321              1        T                  1                      
+ *   2       S4321H              2       T                   2       S              
+ * 
+ * Direction D Amount 10 
+ *  R-1C14  R-3C13  diff R  2   1  C  1   1  Move  R  1 C  1 To R-2C14
+ *  R-2C14  R-3C12  diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C13
+ *  R-2C13  R-3C11  diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C12
+ *  R-2C12  R-3C10  diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C11
+ *  R-2C11  R-3C9   diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C10
+ *  R-2C10  R-3C8   diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C9
+ *  R-2C9   R-3C7   diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C8
+ *  R-2C8   R-3C6   diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C7
+ *  R-2C7   R-3C5   diff R  1   1  C  2   1  Move  R  1 C  1 To R-2C6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2             T8765432 
+ *  -1         8743        1    -1        T                 -1                     1
+ *   0         8432        H     0         T                 0                     H
+ *   1        84321              1        T                  1                      
+ *   2       S4321H              2       T                   2       S              
+ * 
+ * Direction D Amount 10 
+ *  R0C14   R-2C14  diff R  2   1  C  0   0  Move  R  1 C  0 To R-1C14
+ *  R-1C14  R-2C13  diff R  1   1  C  1   1  Move  R  0 C  0 To R-2C13
+ *  R-2C13  R-2C12  diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C12
+ *  R-2C12  R-2C11  diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C11
+ *  R-2C11  R-2C10  diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C10
+ *  R-2C10  R-2C9   diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C9
+ *  R-2C9   R-2C8   diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C8
+ *  R-2C8   R-2C7   diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C7
+ *  R-2C7   R-2C6   diff R  0   0  C  1   1  Move  R  0 C  0 To R-2C6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1              T8765432
+ *   0         8432        1     0         T                 0                     1
+ *   1        84321        H     1        T                  1                     H
+ *   2       S4321H              2       T                   2       S              
+ * 
+ * Direction D Amount 10 
+ *  R1C14   R-1C14  diff R  2   1  C  0   0  Move  R  1 C  0 To R0C14
+ *  R0C14   R-2C13  diff R  2   1  C  1   1  Move  R  1 C  1 To R-1C14
+ *  R-1C14  R-2C12  diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C13
+ *  R-1C13  R-2C11  diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C12
+ *  R-1C12  R-2C10  diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C11
+ *  R-1C11  R-2C9   diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C10
+ *  R-1C10  R-2C8   diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C9
+ *  R-1C9   R-2C7   diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C8
+ *  R-1C8   R-2C6   diff R  1   1  C  2   1  Move  R  1 C  1 To R-1C7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1              T876543 
+ *   0         8432        2     0         T                 0                     2
+ *   1        84321        1     1        T                  1                     1
+ *   2       S4321H        H     2       T                   2       S             H
+ * 
+ * Direction D Amount 10 
+ *  R2C14   R0C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R1C14
+ *  R1C14   R-1C14  diff R  2   1  C  0   0  Move  R  1 C  0 To R0C14
+ *  R0C14   R-1C13  diff R  1   1  C  1   1  Move  R  0 C  0 To R-1C13
+ *  R-1C13  R-1C12  diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C12
+ *  R-1C12  R-1C11  diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C11
+ *  R-1C11  R-1C10  diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C10
+ *  R-1C10  R-1C9   diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C9
+ *  R-1C9   R-1C8   diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C8
+ *  R-1C8   R-1C7   diff R  0   0  C  1   1  Move  R  0 C  0 To R-1C7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0               T876543
+ *   1        84321        2     1        T                  1                     2
+ *   2       S4321H        1     2       T                   2       S             1
+ * 
+ * Direction D Amount 10 
+ *  R3C14   R1C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R2C14
+ *  R2C14   R0C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R1C14
+ *  R1C14   R-1C13  diff R  2   1  C  1   1  Move  R  1 C  1 To R0C14
+ *  R0C14   R-1C12  diff R  1   1  C  2   1  Move  R  1 C  1 To R0C13
+ *  R0C13   R-1C11  diff R  1   1  C  2   1  Move  R  1 C  1 To R0C12
+ *  R0C12   R-1C10  diff R  1   1  C  2   1  Move  R  1 C  1 To R0C11
+ *  R0C11   R-1C9   diff R  1   1  C  2   1  Move  R  1 C  1 To R0C10
+ *  R0C10   R-1C8   diff R  1   1  C  2   1  Move  R  1 C  1 To R0C9
+ *  R0C9    R-1C7   diff R  1   1  C  2   1  Move  R  1 C  1 To R0C8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0               T87654 
+ *   1        84321        3     1        T                  1                     3
+ *   2       S4321H        2     2       T                   2       S             2
+ * 
+ * Direction D Amount 10 
+ *  R4C14   R2C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R3C14
+ *  R3C14   R1C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R2C14
+ *  R2C14   R0C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R1C14
+ *  R1C14   R0C13   diff R  1   1  C  1   1  Move  R  0 C  0 To R0C13
+ *  R0C13   R0C12   diff R  0   0  C  1   1  Move  R  0 C  0 To R0C12
+ *  R0C12   R0C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R0C11
+ *  R0C11   R0C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R0C10
+ *  R0C10   R0C9    diff R  0   0  C  1   1  Move  R  0 C  0 To R0C9
+ *  R0C9    R0C8    diff R  0   0  C  1   1  Move  R  0 C  0 To R0C8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                T87654
+ *   2       S4321H        3     2       T                   2       S             3
+ * 
+ * Direction D Amount 10 
+ *  R5C14   R3C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R4C14
+ *  R4C14   R2C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R3C14
+ *  R3C14   R1C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R2C14
+ *  R2C14   R0C13   diff R  2   1  C  1   1  Move  R  1 C  1 To R1C14
+ *  R1C14   R0C12   diff R  1   1  C  2   1  Move  R  1 C  1 To R1C13
+ *  R1C13   R0C11   diff R  1   1  C  2   1  Move  R  1 C  1 To R1C12
+ *  R1C12   R0C10   diff R  1   1  C  2   1  Move  R  1 C  1 To R1C11
+ *  R1C11   R0C9    diff R  1   1  C  2   1  Move  R  1 C  1 To R1C10
+ *  R1C10   R0C8    diff R  1   1  C  2   1  Move  R  1 C  1 To R1C9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                T8765 
+ *   2       S4321H        4     2       T                   2       S             4
+ * 
+ * Direction D Amount 10 
+ *  R6C14   R4C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R5C14
+ *  R5C14   R3C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R4C14
+ *  R4C14   R2C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R3C14
+ *  R3C14   R1C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R2C14
+ *  R2C14   R1C13   diff R  1   1  C  1   1  Move  R  0 C  0 To R1C13
+ *  R1C13   R1C12   diff R  0   0  C  1   1  Move  R  0 C  0 To R1C12
+ *  R1C12   R1C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R1C11
+ *  R1C11   R1C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R1C10
+ *  R1C10   R1C9    diff R  0   0  C  1   1  Move  R  0 C  0 To R1C9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T8765
+ * 
+ * Direction D Amount 10 
+ *  R7C14   R5C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R6C14
+ *  R6C14   R4C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R5C14
+ *  R5C14   R3C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R4C14
+ *  R4C14   R2C14   diff R  2   1  C  0   0  Move  R  1 C  0 To R3C14
+ *  R3C14   R1C13   diff R  2   1  C  1   1  Move  R  1 C  1 To R2C14
+ *  R2C14   R1C12   diff R  1   1  C  2   1  Move  R  1 C  1 To R2C13
+ *  R2C13   R1C11   diff R  1   1  C  2   1  Move  R  1 C  1 To R2C12
+ *  R2C12   R1C10   diff R  1   1  C  2   1  Move  R  1 C  1 To R2C11
+ *  R2C11   R1C9    diff R  1   1  C  2   1  Move  R  1 C  1 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T8765
+ *   3                     4     3                           3                     4
+ *   4                     3     4                           4                     3
+ *   5                     2     5                           5                     2
+ *   6                     1     6                           6                     1
+ *   7                    HH     7                           7                    H 
+ * 
+ * Direction L Amount 25 
+ *  R7C13   R6C14   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C14
+ *  R6C14   R5C14   diff R  1   1  C  0   0  Move  R  0 C  0 To R5C14
+ *  R5C14   R4C14   diff R  1   1  C  0   0  Move  R  0 C  0 To R4C14
+ *  R4C14   R3C14   diff R  1   1  C  0   0  Move  R  0 C  0 To R3C14
+ *  R3C14   R2C14   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C14
+ *  R2C14   R2C13   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C13
+ *  R2C13   R2C12   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C12
+ *  R2C12   R2C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T876 
+ *   3                    54     3                           3                    5 
+ *   4                    43     4                           4                    4 
+ *   5                    32     5                           5                    3 
+ *   6                    21     6                           6                    2 
+ *   7                   H1H     7                           7                   H1 
+ * 
+ * Direction L Amount 25 
+ *  R7C12   R6C14   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C13
+ *  R7C13   R5C14   diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C13
+ *  R6C13   R4C14   diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C13
+ *  R5C13   R3C14   diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C13
+ *  R4C13   R2C14   diff R  2   1  C -1  -1  Move  R  1 C -1 To R3C13
+ *  R3C13   R2C13   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C13
+ *  R2C13   R2C12   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C12
+ *  R2C12   R2C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T876 
+ *   3                    54     3                           3                    5 
+ *   4                    43     4                           4                    4 
+ *   5                    32     5                           5                    3 
+ *   6                    21     6                           6                    2 
+ *   7                  H11H     7                           7                  H1  
+ * 
+ * Direction L Amount 25 
+ *  R7C11   R7C13   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C12
+ *  R7C12   R6C13   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C13
+ *  R6C13   R5C13   diff R  1   1  C  0   0  Move  R  0 C  0 To R5C13
+ *  R5C13   R4C13   diff R  1   1  C  0   0  Move  R  0 C  0 To R4C13
+ *  R4C13   R3C13   diff R  1   1  C  0   0  Move  R  0 C  0 To R3C13
+ *  R3C13   R2C13   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C13
+ *  R2C13   R2C12   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C12
+ *  R2C12   R2C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T87  
+ *   3                   654     3                           3                   6  
+ *   4                   543     4                           4                   5  
+ *   5                   432     5                           5                   4  
+ *   6                   321     6                           6                   3  
+ *   7                 H121H     7                           7                 H12  
+ * 
+ * Direction L Amount 25 
+ *  R7C10   R7C12   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C11
+ *  R7C11   R6C13   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C12
+ *  R7C12   R5C13   diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C12
+ *  R6C12   R4C13   diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C12
+ *  R5C12   R3C13   diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C12
+ *  R4C12   R2C13   diff R  2   1  C -1  -1  Move  R  1 C -1 To R3C12
+ *  R3C12   R2C12   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C12
+ *  R2C12   R2C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T87  
+ *   3                   654     3                           3                   6  
+ *   4                   543     4                           4                   5  
+ *   5                   432     5                           5                   4  
+ *   6                   321     6                           6                   3  
+ *   7                H1221H     7                           7                H12   
+ * 
+ * Direction L Amount 25 
+ *  R7C9    R7C11   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C10
+ *  R7C10   R7C12   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C11
+ *  R7C11   R6C12   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C12
+ *  R6C12   R5C12   diff R  1   1  C  0   0  Move  R  0 C  0 To R5C12
+ *  R5C12   R4C12   diff R  1   1  C  0   0  Move  R  0 C  0 To R4C12
+ *  R4C12   R3C12   diff R  1   1  C  0   0  Move  R  0 C  0 To R3C12
+ *  R3C12   R2C12   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C12
+ *  R2C12   R2C11   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T8   
+ *   3                  7654     3                           3                  7   
+ *   4                  6543     4                           4                  6   
+ *   5                  5432     5                           5                  5   
+ *   6                  4321     6                           6                  4   
+ *   7               H12321H     7                           7               H123   
+ * 
+ * Direction L Amount 25 
+ *  R7C8    R7C10   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C9
+ *  R7C9    R7C11   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C10
+ *  R7C10   R6C12   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C11
+ *  R7C11   R5C12   diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C11
+ *  R6C11   R4C12   diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C11
+ *  R5C11   R3C12   diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C11
+ *  R4C11   R2C12   diff R  2   1  C -1  -1  Move  R  1 C -1 To R3C11
+ *  R3C11   R2C11   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T8   
+ *   3                  7654     3                           3                  7   
+ *   4                  6543     4                           4                  6   
+ *   5                  5432     5                           5                  5   
+ *   6                  4321     6                           6                  4   
+ *   7              H123321H     7                           7              H123    
+ * 
+ * Direction L Amount 25 
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ *  R7C8    R7C10   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C9
+ *  R7C9    R7C11   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C10
+ *  R7C10   R6C11   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C11
+ *  R6C11   R5C11   diff R  1   1  C  0   0  Move  R  0 C  0 To R5C11
+ *  R5C11   R4C11   diff R  1   1  C  0   0  Move  R  0 C  0 To R4C11
+ *  R4C11   R3C11   diff R  1   1  C  0   0  Move  R  0 C  0 To R3C11
+ *  R3C11   R2C11   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C11
+ *  R2C11   R2C10   diff R  0   0  C  1   1  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T    
+ *   3                 87654     3                           3                 8    
+ *   4                 76543     4                           4                 7    
+ *   5                 65432     5                           5                 6    
+ *   6                 54321     6                           6                 5    
+ *   7             H1234321H     7                           7             H1234    
+ * 
+ * Direction L Amount 25 
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ *  R7C8    R7C10   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C9
+ *  R7C9    R6C11   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C10
+ *  R7C10   R5C11   diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C10
+ *  R6C10   R4C11   diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C10
+ *  R5C10   R3C11   diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C10
+ *  R4C10   R2C11   diff R  2   1  C -1  -1  Move  R  1 C -1 To R3C10
+ *  R3C10   R2C10   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S         T    
+ *   3                 87654     3                           3                 8    
+ *   4                 76543     4                           4                 7    
+ *   5                 65432     5                           5                 6    
+ *   6                 54321     6                           6                 5    
+ *   7            H12344321H     7                           7            H1234     
+ * 
+ * Direction L Amount 25 
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ *  R7C8    R7C10   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C9
+ *  R7C9    R6C10   diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C10
+ *  R6C10   R5C10   diff R  1   1  C  0   0  Move  R  0 C  0 To R5C10
+ *  R5C10   R4C10   diff R  1   1  C  0   0  Move  R  0 C  0 To R4C10
+ *  R4C10   R3C10   diff R  1   1  C  0   0  Move  R  0 C  0 To R3C10
+ *  R3C10   R2C10   diff R  1   1  C  0   0  Move  R  0 C  0 To R2C10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                T     
+ *   4                876543     4                           4                8     
+ *   5                765432     5                           5                7     
+ *   6                654321     6                           6                6     
+ *   7           H123454321H     7                           7           H12345     
+ * 
+ * Direction L Amount 25 
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ *  R7C8    R6C10   diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C9
+ *  R7C9    R5C10   diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C9
+ *  R6C9    R4C10   diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C9
+ *  R5C9    R3C10   diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C9
+ *  R4C9    R2C10   diff R  2   1  C -1  -1  Move  R  1 C -1 To R3C9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                T     
+ *   4                876543     4                           4                8     
+ *   5                765432     5                           5                7     
+ *   6                654321     6                           6                6     
+ *   7          H1234554321H     7                           7          H12345      
+ * 
+ * Direction L Amount 25 
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R7C9    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C8
+ *  R7C8    R6C9    diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C9
+ *  R6C9    R5C9    diff R  1   1  C  0   0  Move  R  0 C  0 To R5C9
+ *  R5C9    R4C9    diff R  1   1  C  0   0  Move  R  0 C  0 To R4C9
+ *  R4C9    R3C9    diff R  1   1  C  0   0  Move  R  0 C  0 To R3C9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4               T      
+ *   5               8765432     5                           5               8      
+ *   6               7654321     6                           6               7      
+ *   7         H12345654321H     7                           7         H123456      
+ * 
+ * Direction L Amount 25 
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R6C9    diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C8
+ *  R7C8    R5C9    diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C8
+ *  R6C8    R4C9    diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C8
+ *  R5C8    R3C9    diff R  2   1  C -1  -1  Move  R  1 C -1 To R4C8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4               T      
+ *   5               8765432     5                           5               8      
+ *   6               7654321     6                           6               7      
+ *   7        H123456654321H     7                           7        H123456       
+ * 
+ * Direction L Amount 25 
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R7C8    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C7
+ *  R7C7    R6C8    diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C8
+ *  R6C8    R5C8    diff R  1   1  C  0   0  Move  R  0 C  0 To R5C8
+ *  R5C8    R4C8    diff R  1   1  C  0   0  Move  R  0 C  0 To R4C8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5              T       
+ *   6              87654321     6                           6              8       
+ *   7       H1234567654321H     7                           7       H1234567       
+ * 
+ * Direction L Amount 25 
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R6C8    diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C7
+ *  R7C7    R5C8    diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C7
+ *  R6C7    R4C8    diff R  2   1  C -1  -1  Move  R  1 C -1 To R5C7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5              T       
+ *   6              87654321     6                           6              8       
+ *   7      H12345677654321H     7                           7      H1234567        
+ * 
+ * Direction L Amount 25 
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R7C7    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C6
+ *  R7C6    R6C7    diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C7
+ *  R6C7    R5C7    diff R  1   1  C  0   0  Move  R  0 C  0 To R5C7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6             T        
+ *   7     H123456787654321H     7                           7     H12345678        
+ * 
+ * Direction L Amount 25 
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R6C7    diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C6
+ *  R7C6    R5C7    diff R  2   1  C -1  -1  Move  R  1 C -1 To R6C6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6             T        
+ *   7    H1234567887654321H     7                           7    H12345678         
+ * 
+ * Direction L Amount 25 
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R7C6    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C5
+ *  R7C5    R6C6    diff R  1   1  C -1  -1  Move  R  0 C  0 To R6C6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7   H12345678887654321H     7            T              7   H12345678T         
+ * 
+ * Direction L Amount 25 
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ *  R7C4    R6C6    diff R  1   1  C -2  -1  Move  R  1 C -1 To R7C5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  H123456788887654321H     7           TT              7  H12345678T          
+ * 
+ * Direction L Amount 25 
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ *  R7C3    R7C5    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C4
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  1234567888887654321H     7          TTT              7  12345678T           
+ * 
+ * Direction L Amount 25 
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ *  R7C2    R7C4    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C3
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  2345678888887654321H     7         TTTT              7  2345678T            
+ * 
+ * Direction L Amount 25 
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ *  R7C1    R7C3    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C2
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  3456788888887654321H     7        TTTTT              7  345678T             
+ * 
+ * Direction L Amount 25 
+ *  R7C-8   R7C-6   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-7
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ *  R7C0    R7C2    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C1
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  4567888888887654321H     7       TTTTTT              7  45678T              
+ * 
+ * Direction L Amount 25 
+ *  R7C-9   R7C-7   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-8
+ *  R7C-8   R7C-6   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-7
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ *  R7C-1   R7C1    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C0
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  5678888888887654321H     7      TTTTTTT              7  5678T               
+ * 
+ * Direction L Amount 25 
+ *  R7C-10  R7C-8   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-9
+ *  R7C-9   R7C-7   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-8
+ *  R7C-8   R7C-6   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-7
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ *  R7C-2   R7C0    diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-1
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                          -8                          -8                      
+ *  -7                          -7                          -7                      
+ *  -6    H1234321H             -6                          -6                      
+ *  -5    123454321             -5                          -5                      
+ *  -4    123465432             -4                          -4                      
+ *  -3    H1237888887654321H    -3          TTT             -3                      
+ *  -2        87654 87654321    -2         T   T            -2                      
+ *  -1         8743  8765432    -1        T     T           -1                      
+ *   0         8432   876543     0         T     T           0                      
+ *   1        84321    87654     1        T       T          1                      
+ *   2       S4321H     8765     2       T         T         2       S              
+ *   3                 87654     3                T          3                      
+ *   4                876543     4               T           4                      
+ *   5               8765432     5              T            5                      
+ *   6              87654321     6             T             6                      
+ *   7  6788888888887654321H     7     TTTTTTTT              7  678T                
+ * 
+ * Direction L Amount 25 
+ *  R7C-11  R7C-9   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-10
+ *  R7C-10  R7C-8   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-9
+ *  R7C-9   R7C-7   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-8
+ *  R7C-8   R7C-6   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-7
+ *  R7C-7   R7C-5   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-6
+ *  R7C-6   R7C-4   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-5
+ *  R7C-5   R7C-3   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-4
+ *  R7C-4   R7C-2   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-3
+ *  R7C-3   R7C-1   diff R  0   0  C -2  -1  Move  R  0 C -1 To R7C-2
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1                84321    87654     1                T       T          1                              
+ *   2               S4321H     8765     2               T         T         2               S              
+ *   3                         87654     3                        T          3                              
+ *   4                        876543     4                       T           4                              
+ *   5                       8765432     5                      T            5                              
+ *   6    H                 87654321     6                     T             6    H                         
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7     12345678T                
+ * 
+ * Direction U Amount 20 
+ *  R6C-11  R7C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R7C-10
+ *  R7C-10  R7C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-9
+ *  R7C-9   R7C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-8
+ *  R7C-8   R7C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-7
+ *  R7C-7   R7C-6   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-6
+ *  R7C-6   R7C-5   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-5
+ *  R7C-5   R7C-4   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-4
+ *  R7C-4   R7C-3   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-3
+ *  R7C-3   R7C-2   diff R  0   0  C -1  -1  Move  R  0 C  0 To R7C-2
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1                84321    87654     1                T       T          1                              
+ *   2               S4321H     8765     2               T         T         2               S              
+ *   3                         87654     3                        T          3                              
+ *   4                        876543     4                       T           4                              
+ *   5    H                  8765432     5                      T            5    H                         
+ *   6    12345678          87654321     6            T        T             6    12345678T                 
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R5C-11  R7C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R6C-11
+ *  R6C-11  R7C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-10
+ *  R6C-10  R7C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-9
+ *  R6C-9   R7C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-8
+ *  R6C-8   R7C-6   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-7
+ *  R6C-7   R7C-5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-6
+ *  R6C-6   R7C-4   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-5
+ *  R6C-5   R7C-3   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-4
+ *  R6C-4   R7C-2   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R6C-3
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1                84321    87654     1                T       T          1                              
+ *   2               S4321H     8765     2               T         T         2               S              
+ *   3                         87654     3                        T          3                              
+ *   4    H                   876543     4                       T           4    H                         
+ *   5    1                  8765432     5                      T            5    1                         
+ *   6    12345678          87654321     6            T        T             6     2345678T                 
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R4C-11  R6C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R5C-11
+ *  R5C-11  R6C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R6C-10
+ *  R6C-10  R6C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-9
+ *  R6C-9   R6C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-8
+ *  R6C-8   R6C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-7
+ *  R6C-7   R6C-6   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-6
+ *  R6C-6   R6C-5   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-5
+ *  R6C-5   R6C-4   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-4
+ *  R6C-4   R6C-3   diff R  0   0  C -1  -1  Move  R  0 C  0 To R6C-3
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1                84321    87654     1                T       T          1                              
+ *   2               S4321H     8765     2               T         T         2               S              
+ *   3    H                    87654     3                        T          3    H                         
+ *   4    1                   876543     4                       T           4    1                         
+ *   5    2345678            8765432     5           T          T            5    2345678T                  
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R3C-11  R5C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R4C-11
+ *  R4C-11  R6C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R5C-11
+ *  R5C-11  R6C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-10
+ *  R5C-10  R6C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-9
+ *  R5C-9   R6C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-8
+ *  R5C-8   R6C-6   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-7
+ *  R5C-7   R6C-5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-6
+ *  R5C-6   R6C-4   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-5
+ *  R5C-5   R6C-3   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R5C-4
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1                84321    87654     1                T       T          1                              
+ *   2    H          S4321H     8765     2               T         T         2    H          S              
+ *   3    1                    87654     3                        T          3    1                         
+ *   4    2                   876543     4                       T           4    2                         
+ *   5    2345678            8765432     5           T          T            5     345678T                  
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R2C-11  R4C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C-11
+ *  R3C-11  R5C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R4C-11
+ *  R4C-11  R5C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R5C-10
+ *  R5C-10  R5C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-9
+ *  R5C-9   R5C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-8
+ *  R5C-8   R5C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-7
+ *  R5C-7   R5C-6   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-6
+ *  R5C-6   R5C-5   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-5
+ *  R5C-5   R5C-4   diff R  0   0  C -1  -1  Move  R  0 C  0 To R5C-4
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0                 8432   876543     0                 T     T           0                              
+ *   1    H           84321    87654     1                T       T          1    H                         
+ *   2    1          S4321H     8765     2               T         T         2    1          S              
+ *   3    2                    87654     3                        T          3    2                         
+ *   4    345678              876543     4          T            T           4    345678T                   
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R1C-11  R3C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C-11
+ *  R2C-11  R4C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C-11
+ *  R3C-11  R5C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R4C-11
+ *  R4C-11  R5C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-10
+ *  R4C-10  R5C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-9
+ *  R4C-9   R5C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-8
+ *  R4C-8   R5C-6   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-7
+ *  R4C-7   R5C-5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-6
+ *  R4C-6   R5C-4   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R4C-5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1                 8743  8765432    -1                T     T           -1                              
+ *   0    H            8432   876543     0                 T     T           0    H                         
+ *   1    1           84321    87654     1                T       T          1    1                         
+ *   2    2          S4321H     8765     2               T         T         2    2          S              
+ *   3    3                    87654     3                        T          3    3                         
+ *   4    345678              876543     4          T            T           4     45678T                   
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ *  R1C-11  R3C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C-11
+ *  R2C-11  R4C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R3C-11
+ *  R3C-11  R4C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R4C-10
+ *  R4C-10  R4C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R4C-9
+ *  R4C-9   R4C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R4C-8
+ *  R4C-8   R4C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R4C-7
+ *  R4C-7   R4C-6   diff R  0   0  C -1  -1  Move  R  0 C  0 To R4C-6
+ *  R4C-6   R4C-5   diff R  0   0  C -1  -1  Move  R  0 C  0 To R4C-5
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2                87654 87654321    -2                 T   T            -2                              
+ *  -1    H            8743  8765432    -1                T     T           -1    H                         
+ *   0    1            8432   876543     0                 T     T           0    1                         
+ *   1    2           84321    87654     1                T       T          1    2                         
+ *   2    3          S4321H     8765     2               T         T         2    3          S              
+ *   3    45678                87654     3         T              T          3    45678T                    
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ *  R1C-11  R3C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C-11
+ *  R2C-11  R4C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R3C-11
+ *  R3C-11  R4C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R3C-10
+ *  R3C-10  R4C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R3C-9
+ *  R3C-9   R4C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R3C-8
+ *  R3C-8   R4C-6   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R3C-7
+ *  R3C-7   R4C-5   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R3C-6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3            H1237888887654321H    -3                  TTT             -3                              
+ *  -2    H           87654 87654321    -2                 T   T            -2    H                         
+ *  -1    1            8743  8765432    -1                T     T           -1    1                         
+ *   0    2            8432   876543     0                 T     T           0    2                         
+ *   1    3           84321    87654     1                T       T          1    3                         
+ *   2    4          S4321H     8765     2               T         T         2    4          S              
+ *   3    45678                87654     3         T              T          3     5678T                    
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ *  R1C-11  R3C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R2C-11
+ *  R2C-11  R3C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R3C-10
+ *  R3C-10  R3C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R3C-9
+ *  R3C-9   R3C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R3C-8
+ *  R3C-8   R3C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R3C-7
+ *  R3C-7   R3C-6   diff R  0   0  C -1  -1  Move  R  0 C  0 To R3C-6
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4            123465432             -4                                  -4                              
+ *  -3    H       H1237888887654321H    -3                  TTT             -3    H                         
+ *  -2    1           87654 87654321    -2                 T   T            -2    1                         
+ *  -1    2            8743  8765432    -1                T     T           -1    2                         
+ *   0    3            8432   876543     0                 T     T           0    3                         
+ *   1    4           84321    87654     1                T       T          1    4                         
+ *   2    5678       S4321H     8765     2        T      T         T         2    5678T      S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ *  R1C-11  R3C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R2C-11
+ *  R2C-11  R3C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R2C-10
+ *  R2C-10  R3C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R2C-9
+ *  R2C-9   R3C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R2C-8
+ *  R2C-8   R3C-6   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R2C-7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5            123454321             -5                                  -5                              
+ *  -4    H       123465432             -4                                  -4    H                         
+ *  -3    1       H1237888887654321H    -3                  TTT             -3    1                         
+ *  -2    2           87654 87654321    -2                 T   T            -2    2                         
+ *  -1    3            8743  8765432    -1                T     T           -1    3                         
+ *   0    4            8432   876543     0                 T     T           0    4                         
+ *   1    5           84321    87654     1                T       T          1    5                         
+ *   2    5678       S4321H     8765     2        T      T         T         2     678T      S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R2C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R1C-11
+ *  R1C-11  R2C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R2C-10
+ *  R2C-10  R2C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R2C-9
+ *  R2C-9   R2C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R2C-8
+ *  R2C-8   R2C-7   diff R  0   0  C -1  -1  Move  R  0 C  0 To R2C-7
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6            H1234321H             -6                                  -6                              
+ *  -5    H       123454321             -5                                  -5    H                         
+ *  -4    1       123465432             -4                                  -4    1                         
+ *  -3    2       H1237888887654321H    -3                  TTT             -3    2                         
+ *  -2    3           87654 87654321    -2                 T   T            -2    3                         
+ *  -1    4            8743  8765432    -1                T     T           -1    4                         
+ *   0    5            8432   876543     0                 T     T           0    5                         
+ *   1    678         84321    87654     1       T        T       T          1    678T                      
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R2C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R1C-11
+ *  R1C-11  R2C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R1C-10
+ *  R1C-10  R2C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R1C-9
+ *  R1C-9   R2C-7   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R1C-8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7                                  -7                                  -7                              
+ *  -6    H       H1234321H             -6                                  -6    H                         
+ *  -5    1       123454321             -5                                  -5    1                         
+ *  -4    2       123465432             -4                                  -4    2                         
+ *  -3    3       H1237888887654321H    -3                  TTT             -3    3                         
+ *  -2    4           87654 87654321    -2                 T   T            -2    4                         
+ *  -1    5            8743  8765432    -1                T     T           -1    5                         
+ *   0    6            8432   876543     0                 T     T           0    6                         
+ *   1    678         84321    87654     1       T        T       T          1     78T                      
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R0C-11
+ *  R0C-11  R1C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R1C-10
+ *  R1C-10  R1C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R1C-9
+ *  R1C-9   R1C-8   diff R  0   0  C -1  -1  Move  R  0 C  0 To R1C-8
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8                                  -8                                  -8                              
+ *  -7    H                             -7                                  -7    H                         
+ *  -6    1       H1234321H             -6                                  -6    1                         
+ *  -5    2       123454321             -5                                  -5    2                         
+ *  -4    3       123465432             -4                                  -4    3                         
+ *  -3    4       H1237888887654321H    -3                  TTT             -3    4                         
+ *  -2    5           87654 87654321    -2                 T   T            -2    5                         
+ *  -1    6            8743  8765432    -1                T     T           -1    6                         
+ *   0    78           8432   876543     0      T          T     T           0    78T                       
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R1C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R0C-11
+ *  R0C-11  R1C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R0C-10
+ *  R0C-10  R1C-8   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R0C-9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    H                             -8                                  -8    H                         
+ *  -7    1                             -7                                  -7    1                         
+ *  -6    2       H1234321H             -6                                  -6    2                         
+ *  -5    3       123454321             -5                                  -5    3                         
+ *  -4    4       123465432             -4                                  -4    4                         
+ *  -3    5       H1237888887654321H    -3                  TTT             -3    5                         
+ *  -2    6           87654 87654321    -2                 T   T            -2    6                         
+ *  -1    7            8743  8765432    -1                T     T           -1    7                         
+ *   0    78           8432   876543     0      T          T     T           0     8T                       
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-11  diff R -2  -1  C  0   0  Move  R -1 C  0 To R-1C-11
+ *  R-1C-11 R0C-10  diff R -1  -1  C -1  -1  Move  R  0 C  0 To R0C-10
+ *  R0C-10  R0C-9   diff R  0   0  C -1  -1  Move  R  0 C  0 To R0C-9
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    1                             -8                                  -8    1                         
+ *  -7    2                             -7                                  -7    2                         
+ *  -6    3       H1234321H             -6                                  -6    3                         
+ *  -5    4       123454321             -5                                  -5    4                         
+ *  -4    5       123465432             -4                                  -4    5                         
+ *  -3    6       H1237888887654321H    -3                  TTT             -3    6                         
+ *  -2    7           87654 87654321    -2                 T   T            -2    7                         
+ *  -1    8            8743  8765432    -1     T          T     T           -1    8T                        
+ *   0    78           8432   876543     0      T          T     T           0                              
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R0C-10  diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-1C-11
+ *  R-1C-11 R0C-9   diff R -1  -1  C -2  -1  Move  R -1 C -1 To R-1C-10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    2                             -8                                  -8    2                         
+ *  -7    3                             -7                                  -7    3                         
+ *  -6    4       H1234321H             -6                                  -6    4                         
+ *  -5    5       123454321             -5                                  -5    5                         
+ *  -4    6       123465432             -4                                  -4    6                         
+ *  -3    7       H1237888887654321H    -3                  TTT             -3    7                         
+ *  -2    8           87654 87654321    -2                 T   T            -2    8                         
+ *  -1    8            8743  8765432    -1     T          T     T           -1     T                        
+ *   0    78           8432   876543     0      T          T     T           0                              
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-10C-11 R-8C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-9C-11
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-2C-11
+ *  R-2C-11 R-1C-10 diff R -1  -1  C -1  -1  Move  R  0 C  0 To R-1C-10
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    3                             -8                                  -8    3                         
+ *  -7    4                             -7                                  -7    4                         
+ *  -6    5       H1234321H             -6                                  -6    5                         
+ *  -5    6       123454321             -5                                  -5    6                         
+ *  -4    7       123465432             -4                                  -4    7                         
+ *  -3    8       H1237888887654321H    -3                  TTT             -3    8                         
+ *  -2    8           87654 87654321    -2    T            T   T            -2    T                         
+ *  -1    8            8743  8765432    -1     T          T     T           -1                              
+ *   0    78           8432   876543     0      T          T     T           0                              
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-11C-11 R-9C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-10C-11
+ *  R-10C-11 R-8C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-9C-11
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ *  R-3C-11 R-1C-10 diff R -2  -1  C -1  -1  Move  R -1 C -1 To R-2C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    4                             -8                                  -8    4                         
+ *  -7    5                             -7                                  -7    5                         
+ *  -6    6       H1234321H             -6                                  -6    6                         
+ *  -5    7       123454321             -5                                  -5    7                         
+ *  -4    8       123465432             -4                                  -4    8                         
+ *  -3    8       H1237888887654321H    -3    T             TTT             -3    T                         
+ *  -2    8           87654 87654321    -2    T            T   T            -2                              
+ *  -1    8            8743  8765432    -1     T          T     T           -1                              
+ *   0    78           8432   876543     0      T          T     T           0                              
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-12C-11 R-10C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-11C-11
+ *  R-11C-11 R-9C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-10C-11
+ *  R-10C-11 R-8C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-9C-11
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ *  R-4C-11 R-2C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-3C-11
+ * 
+ *      012345678901234        012345678901234        012345678901234
+ *  -8    5                             -8                                  -8    5                         
+ *  -7    6                             -7                                  -7    6                         
+ *  -6    7       H1234321H             -6                                  -6    7                         
+ *  -5    8       123454321             -5                                  -5    8                         
+ *  -4    8       123465432             -4    T                             -4    T                         
+ *  -3    8       H1237888887654321H    -3    T             TTT             -3                              
+ *  -2    8           87654 87654321    -2    T            T   T            -2                              
+ *  -1    8            8743  8765432    -1     T          T     T           -1                              
+ *   0    78           8432   876543     0      T          T     T           0                              
+ *   1    678         84321    87654     1       T        T       T          1                              
+ *   2    5678       S4321H     8765     2        T      T         T         2               S              
+ *   3    45678                87654     3         T              T          3                              
+ *   4    345678              876543     4          T            T           4                              
+ *   5    2345678            8765432     5           T          T            5                              
+ *   6    12345678          87654321     6            T        T             6                              
+ *   7    H123456788888888887654321H     7             TTTTTTTT              7                              
+ * 
+ * Direction U Amount 20 
+ *  R-13C-11 R-11C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-12C-11
+ *  R-12C-11 R-10C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-11C-11
+ *  R-11C-11 R-9C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-10C-11
+ *  R-10C-11 R-8C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-9C-11
+ *  R-9C-11 R-7C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-8C-11
+ *  R-8C-11 R-6C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-7C-11
+ *  R-7C-11 R-5C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-6C-11
+ *  R-6C-11 R-4C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-5C-11
+ *  R-5C-11 R-3C-11 diff R -2  -1  C  0   0  Move  R -1 C  0 To R-4C-11
+ * 
+ * 
+ * Result Part 1 = 88
+ * Result Part 2 = 36
+ * 
+ *  * 
  */
