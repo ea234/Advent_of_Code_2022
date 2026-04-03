@@ -230,7 +230,7 @@ class MonkeyMap
         this.cur_col = this.findNewStartLeft( this.cur_row );
     }
 
-    public determineWrapPositions() : void 
+    public determineWrapPositionsPart1() : void 
     {
         /*
          * Line Wrap Row Positions 
@@ -239,7 +239,6 @@ class MonkeyMap
         {
             let cur_col_start = this.findNewStartLeft( cur_row1 );
             let cur_col_end   = this.findEndToRight( cur_row1, cur_col_start );
-
 
             this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_start - 1 ) ] = { row : cur_row1, col : cur_col_end   };
             this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_end   + 1 ) ] = { row : cur_row1, col : cur_col_start };
@@ -257,6 +256,120 @@ class MonkeyMap
             this.wrap_positons[ "R" + ( cur_row_end   + 1 ) + "C" + cur_col1 ] = { row : cur_row_start, col : cur_col1 };
         }
     }
+
+
+
+    public determineWrapPositionsPart2( pSquareWidth : number ) : void 
+    {
+/*
+          HIJK
+          G111
+          F111
+          E111
+
+VWXY DCBA 4444
+2222 3333 4444
+2222 3333 4444
+2222 3333 4444
+
+          5555 6666
+          5555 6666
+          5555 6666
+          5555 6666
+
+top    row square 3 - wraps to left col square 1
+bottom row square 3 - wraps to left col square 5
+
+top    row square 2 - wraps to top    row square 1
+bottom row square 2 - wraps to bottom row square 5
+bottom row square 6 - wraps to left col square 2 
+
+top    row square 6 - wraps to right col square 4
+right  col square 6 - wraps to right col square 1
+
+left col square 2 - wraps to 
+
+1 rc 6 rc
+
+*/
+
+
+    // let pSquare1Col1 : number = 0;
+
+    // for ( let cur_step : number = 0; cur_step < pSquareWidth; cur_step++ )
+    // {
+    //     let square_1_col : number = pSquare1Col1 + cur_step;
+
+    //     let square_2_row : number = pSquare2Row + cur_step
+
+    // }
+
+    let square_width : number = pSquareWidth;
+
+
+
+    let square_2_top_row    : number = square_width;
+    let square_2_left_col   : number = 0;
+
+    let square_2_bottom_row : number = square_2_top_row + square_width;
+    let square_2_right_col  : number = square_2_left_col + square_width;
+
+    let square_3_top_row    : number = square_2_top_row;
+    let square_3_left_col   : number = square_2_right_col + 1;
+
+    let square_3_bottom_row : number = square_3_top_row + square_width;
+    let square_3_right_col  : number = square_3_left_col + square_width;
+
+    let square_4_top_row    : number = square_3_top_row;
+    let square_4_left_col   : number = square_3_right_col + 1;
+
+    let square_4_bottom_row : number = square_4_top_row + square_width;
+    let square_4_right_col  : number = square_4_left_col + square_width;
+
+    let square_5_top_row    : number = square_4_bottom_row + 1;
+    let square_5_left_col   : number = square_4_left_col;
+
+    let square_5_bottom_row : number = square_5_top_row + square_width;
+    let square_5_right_col  : number = square_5_left_col + square_width;
+
+    let square_6_top_row    : number = square_5_top_row;
+    let square_6_left_col   : number = square_5_right_col + 1;
+
+    let square_6_bottom_row : number = square_6_top_row + square_width;
+    let square_6_right_col  : number = square_6_left_col + square_width;
+
+    let square_1_bottom_row : number = square_4_top_row - 1;
+    let square_1_left_col   : number = square_4_left_col;
+
+    let square_1_top_row    : number = square_1_bottom_row - ( square_width - 1);
+    let square_1_right_col  : number = square_1_left_col + square_width;
+
+        /*
+         * Line Wrap Row Positions 
+         */
+        for ( let cur_row1 = 0; cur_row1 < this.grid_rows; cur_row1++ )
+        {
+            let cur_col_start = this.findNewStartLeft( cur_row1 );
+            let cur_col_end   = this.findEndToRight( cur_row1, cur_col_start );
+
+            this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_start - 1 ) ] = { row : cur_row1, col : cur_col_end   };
+            this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_end   + 1 ) ] = { row : cur_row1, col : cur_col_start };
+        }
+
+        /*
+         * Line Wrap Col Positions 
+         */
+        for ( let cur_col1 = 0; cur_col1 < this.grid_rows; cur_col1++ )
+        {
+            let cur_row_start = this.findNewStartToBottom( cur_col1 );
+            let cur_row_end   = this.findEndToBottom( cur_row_start, cur_col1 );
+
+            this.wrap_positons[ "R" + ( cur_row_start - 1 ) + "C" + cur_col1 ] = { row : cur_row_end,   col : cur_col1 };
+            this.wrap_positons[ "R" + ( cur_row_end   + 1 ) + "C" + cur_col1 ] = { row : cur_row_start, col : cur_col1 };
+        }
+    }
+
+
 
     public getCharAt( pRow : number, pCol : number ) : string 
     {
@@ -486,7 +599,7 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     monkey_map.determineStartPosition();
 
-    monkey_map.determineWrapPositions();
+    monkey_map.determineWrapPositionsPart1();
 
     let move_count : number = 0;
 
@@ -620,13 +733,169 @@ function getTestArray1() : string[]
     return array_test;
 }
 
+function placeDebug( pMap : PropertieMap, pRow1 : number, pCol1 : number, pRow2 : number, pCol2 : number, pChar : string ) : void 
+{
+    let temp_key : string = "";
+
+    temp_key = "R" + pRow1 + "C" + pCol1; pMap[ temp_key ] = pChar;
+    temp_key = "R" + pRow1 + "C" + pCol2; pMap[ temp_key ] = pChar;
+
+    temp_key = "R" + pRow2 + "C" + pCol1; pMap[ temp_key ] = pChar;
+    temp_key = "R" + pRow2 + "C" + pCol2; pMap[ temp_key ] = pChar;
+}
+
+function debugCalcSquare( pSquareWidth : number ) : void 
+{
+    let square_width : number = pSquareWidth;
+
+    let square_2_top_row    : number = square_width;
+    let square_2_left_col   : number = 0;
+
+    let square_2_bottom_row : number = square_2_top_row + square_width;
+    let square_2_right_col  : number = square_2_left_col + square_width;
+
+    let square_3_top_row    : number = square_2_top_row;
+    let square_3_left_col   : number = square_2_right_col + 1;
+
+    let square_3_bottom_row : number = square_3_top_row + square_width;
+    let square_3_right_col  : number = square_3_left_col + square_width;
+
+    let square_4_top_row    : number = square_3_top_row;
+    let square_4_left_col   : number = square_3_right_col + 1;
+
+    let square_4_bottom_row : number = square_4_top_row + square_width;
+    let square_4_right_col  : number = square_4_left_col + square_width;
+
+    let square_5_top_row    : number = square_4_bottom_row + 1;
+    let square_5_left_col   : number = square_4_left_col;
+
+    let square_5_bottom_row : number = square_5_top_row + square_width;
+    let square_5_right_col  : number = square_5_left_col + square_width;
+
+    let square_6_top_row    : number = square_5_top_row;
+    let square_6_left_col   : number = square_5_right_col + 1;
+
+    let square_6_bottom_row : number = square_6_top_row + square_width;
+    let square_6_right_col  : number = square_6_left_col + square_width;
+
+    let square_1_bottom_row : number = square_4_top_row - 1;
+    let square_1_left_col   : number = square_4_left_col;
+
+    let square_1_top_row    : number = square_1_bottom_row - ( square_width - 1);
+    let square_1_right_col  : number = square_1_left_col + square_width;
+
+    let debug_map : PropertieMap = {};
+
+
+    wl( "square_width        " + square_width         );
+    wl( "" );
+    wl( "square_2_top_row    " + square_2_top_row     );
+    wl( "square_2_left_col   " + square_2_left_col    );
+    wl( "square_2_bottom_row " + square_2_bottom_row  );
+    wl( "square_2_right_col  " + square_2_right_col   );
+    wl( "" );
+    wl( "square_3_top_row    " + square_3_top_row     );
+    wl( "square_3_left_col   " + square_3_left_col    );
+    wl( "square_3_bottom_row " + square_3_bottom_row  );
+    wl( "square_3_right_col  " + square_3_right_col   );
+    wl( "" );
+    wl( "square_4_top_row    " + square_4_top_row     );
+    wl( "square_4_left_col   " + square_4_left_col    );
+    wl( "square_4_bottom_row " + square_4_bottom_row  );
+    wl( "square_4_right_col  " + square_4_right_col   );
+    wl( "" );
+    wl( "square_5_top_row    " + square_5_top_row     );
+    wl( "square_5_left_col   " + square_5_left_col    );
+    wl( "square_5_bottom_row " + square_5_bottom_row  );
+    wl( "square_5_right_col  " + square_5_right_col   );
+    wl( "" );
+    wl( "square_6_top_row    " + square_6_top_row     );
+    wl( "square_6_left_col   " + square_6_left_col    );
+    wl( "square_6_bottom_row " + square_6_bottom_row  );
+    wl( "square_6_right_col  " + square_6_right_col   );
+    wl( "" );
+    wl( "square_1_top_row    " + square_1_top_row     );
+    wl( "square_1_left_col   " + square_1_left_col    );
+    wl( "square_1_bottom_row " + square_1_bottom_row  );
+    wl( "square_1_right_col  " + square_1_right_col   );
+
+
+    placeDebug( debug_map, square_1_top_row, square_1_left_col, square_1_bottom_row, square_1_right_col, "1" );
+    placeDebug( debug_map, square_2_top_row, square_2_left_col, square_2_bottom_row, square_2_right_col, "2" );
+    placeDebug( debug_map, square_3_top_row, square_3_left_col, square_3_bottom_row, square_3_right_col, "3" );
+    placeDebug( debug_map, square_4_top_row, square_4_left_col, square_4_bottom_row, square_4_right_col, "4" );
+    placeDebug( debug_map, square_5_top_row, square_5_left_col, square_5_bottom_row, square_5_right_col, "5" );
+    placeDebug( debug_map, square_6_top_row, square_6_left_col, square_6_bottom_row, square_6_right_col, "6" );
+
+    wl( getDebugMap( debug_map, 0, 0, ( square_width * 4 ),  ( square_width * 5 ) ));
+
+/*
+ * /home/ea234/.nvm/versions/node/v20.16.0/bin/node ./dist/day22/day_22__Monkey_Map.js
+ * 
+ * Day22 - Monkey Map
+ * 
+ * square_width        4
+ * square_2_top_row    4
+ * square_2_left_col   0
+ * square_2_bottom_row 8
+ * square_2_right_col  4
+ * 
+ * square_3_top_row    4
+ * square_3_left_col   5
+ * square_3_bottom_row 8
+ * square_3_right_col  9
+ * 
+ * square_4_top_row    4
+ * square_4_left_col   10
+ * square_4_bottom_row 8
+ * square_4_right_col  14
+ * 
+ * square_5_top_row    9
+ * square_5_left_col   10
+ * square_5_bottom_row 13
+ * square_5_right_col  14
+ * 
+ * square_6_top_row    9
+ * square_6_left_col   15
+ * square_6_bottom_row 13
+ * square_6_right_col  19
+ * 
+ * square_1_top_row    0
+ * square_1_left_col   10
+ * square_1_bottom_row 3
+ * square_1_right_col  14
+ * 
+ *      01234567890123456789
+ *   0            1   1
+ *   1
+ *   2
+ *   3            1   1
+ *   4  2   23   34   4
+ *   5
+ *   6
+ *   7
+ *   8  2   23   34   4
+ *   9            5   56   6
+ *  10
+ *  11
+ *  12
+ *  13            5   56   6
+ *  14
+ *  15
+ * 
+ */
+}
+
+
 wl( "" );
 wl( "Day22 - Monkey Map" );
 wl( "" );
 
-calcArray( getTestArray1(), true );
+//calcArray( getTestArray1(), true );
 
 //checkReaddatei();
+
+debugCalcSquare( 4 );
 
 wl( "" )
 wl( "Day 22 - Ende" );
