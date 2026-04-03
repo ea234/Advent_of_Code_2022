@@ -80,6 +80,10 @@ const VALUE_UP           : number = 3;
 
 const STR_COMBINE_SPACER : string = "     "; 
 
+type Coords = { col : number, row : number };
+
+type PropCoords = Record< string, Coords >;
+
 type PropertieMap = Record< string, string >;
 
 
@@ -202,15 +206,56 @@ class MonkeyMap
     grid_cols     : number = 0;
 
     move_map      : PropertieMap = {};
+
     map_input_str : PropertieMap = {};
+
+    wrap_positons : PropCoords   = {};
 
     constructor()
     {
     }
 
+    public reset()
+    {
+        this.cur_col = 0;
+        this.cur_row = 0;
+
+        this.move_map = {};
+
+        this.wrap_positons = {}
+    }
+
     public determineStartPosition() : void 
     {
         this.cur_col = this.findNewStartLeft( this.cur_row );
+    }
+
+    public determineWrapPositions() : void 
+    {
+        /*
+         * Line Wrap Row Positions 
+         */
+        for ( let cur_row1 = 0; cur_row1 < this.grid_rows; cur_row1++ )
+        {
+            let cur_col_start = this.findNewStartLeft( cur_row1 );
+            let cur_col_end   = this.findEndToRight( cur_row1, cur_col_start );
+
+
+            this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_start - 1 ) ] = { row : cur_row1, col : cur_col_end   };
+            this.wrap_positons[ "R" + cur_row1 + "C" + ( cur_col_end   + 1 ) ] = { row : cur_row1, col : cur_col_start };
+        }
+
+        /*
+         * Line Wrap Col Positions 
+         */
+        for ( let cur_col1 = 0; cur_col1 < this.grid_rows; cur_col1++ )
+        {
+            let cur_row_start = this.findNewStartToBottom( cur_col1 );
+            let cur_row_end   = this.findEndToBottom( cur_row_start, cur_col1 );
+
+            this.wrap_positons[ "R" + ( cur_row_start - 1 ) + "C" + cur_col1 ] = { row : cur_row_end,   col : cur_col1 };
+            this.wrap_positons[ "R" + ( cur_row_end   + 1 ) + "C" + cur_col1 ] = { row : cur_row_start, col : cur_col1 };
+        }
     }
 
     public getCharAt( pRow : number, pCol : number ) : string 
@@ -293,7 +338,21 @@ class MonkeyMap
         return -1;
     }
 
-    public findEndToRight( pRow : number, pCol : number ) : number 
+    private findNewStartToBottom( pCol : number ) : number 
+    {
+        for ( let result_row = 0; result_row < this.grid_rows; result_row++ )
+        {
+            if ( ( this.map_input_str[ "R" + result_row + "C" + pCol ] ?? CHAR_NO_MAP ) != CHAR_NO_MAP )
+            {
+                return result_row;
+            }
+        }
+
+        return -1;
+    }
+
+
+    private findEndToRight( pRow : number, pCol : number ) : number 
     {
         for ( let result_col = pCol; result_col < this.grid_cols; result_col++ )
         {
@@ -306,33 +365,7 @@ class MonkeyMap
         return pCol;
     }
 
-    public findEndToLeft( pRow : number, pCol : number ) : number 
-    {
-        for ( let result_col = pCol; result_col >= 0; result_col-- )
-        {
-            if ( ( this.map_input_str[ "R" + pRow + "C" + ( result_col - 1 ) ] ?? CHAR_NO_MAP ) == CHAR_NO_MAP )
-            {
-                return result_col;
-            }
-        }
-
-        return pCol;
-    }
-
-    public findEndToTop( pRow : number, pCol : number ) : number 
-    {
-        for ( let result_row = pRow; result_row >= 0; result_row-- )
-        {
-            if ( ( this.map_input_str[ "R" + ( result_row - 1 )+ "C" + pCol ] ?? CHAR_NO_MAP ) == CHAR_NO_MAP )
-            {
-                return result_row;
-            }
-        }
-
-        return pRow;
-    }
-
-    public findEndToBottom( pRow : number, pCol : number ) : number 
+    private findEndToBottom( pRow : number, pCol : number ) : number 
     {
         for ( let result_row = pRow; result_row < this.grid_rows; result_row++ )
         {
@@ -345,25 +378,38 @@ class MonkeyMap
         return pRow;
     }
 
-    public moveRight( pAmount : number ) : number
+    private getWrapPosition( pRow : number, pCol : number ) : Coords | undefined
     {
-        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_RIGHT;
+        return this.wrap_positons[ "R" + pRow + "C" + pCol ] ??  undefined;
+    }
+
+    public move( pAmount : number, pDeltaRow : number, pDeltaCol : number, pCharMap : string ) : number
+    {
+        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = pCharMap;
 
         for ( let step_count = 0; step_count < pAmount; step_count++ )
         {
             /*
              * Check Wrap Around             
              */
-            if ( this.getCharAt( this.cur_row, this.cur_col + 1 ) === CHAR_NO_MAP )
+            if ( this.getCharAt( this.cur_row + pDeltaRow, this.cur_col + pDeltaCol ) === CHAR_NO_MAP )
             {
-                let find_index = this.findEndToLeft( this.cur_row, this.cur_col );
+                let wrap_coords = this.getWrapPosition( this.cur_row + pDeltaRow, this.cur_col + pDeltaCol );
 
-                if ( this.getCharAt( this.cur_row, find_index ) === CHAR_MAP_WALL )
+                if ( wrap_coords === undefined )
+                {
+                    wl( "ERROR - move - no wrap coords found at R" + ( this.cur_row + pDeltaRow ) + "C" + ( this.cur_col + pDeltaCol ) );
+
+                    throw Error( "ERROR - move - no wrap coords found at R" + ( this.cur_row + pDeltaRow ) + "C" + ( this.cur_col + pDeltaCol ) );
+                }
+
+                if ( this.getCharAt( wrap_coords.row, wrap_coords.col ) === CHAR_MAP_WALL )
                 {
                     return step_count;
                 }
 
-                this.cur_col = find_index;
+                this.cur_col = wrap_coords.col;
+                this.cur_row = wrap_coords.row;
             }
             else
             {
@@ -371,140 +417,21 @@ class MonkeyMap
                  * If there is a wall in the next position, no further 
                  * movement is possible.
                  */
-                if ( this.getCharAt( this.cur_row, this.cur_col + 1 ) === CHAR_MAP_WALL )
+                if ( this.getCharAt( this.cur_row + pDeltaRow, this.cur_col + pDeltaCol ) === CHAR_MAP_WALL )
                 {
                     return step_count;
                 }
 
-                this.cur_col++;
+                this.cur_col += pDeltaCol;
+                this.cur_row += pDeltaRow;
             }
 
-            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_RIGHT;
+            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = pCharMap;
         }
 
         return pAmount;
     }
 
-    public moveLeft( pAmount : number ) : number
-    {
-        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_LEFT;
-
-
-        for ( let step_count = 0; step_count < pAmount; step_count++ )
-        {
-            /*
-             * Check wrap around in this step.
-             */
-            if ( this.getCharAt( this.cur_row, this.cur_col - 1 ) === CHAR_NO_MAP )
-            {
-                let find_index = this.findEndToRight( this.cur_row, this.cur_col );
-
-                if ( this.getCharAt( this.cur_row, find_index ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_col = find_index;
-            }
-            else 
-            {
-                /*
-                 * If there is a wall in the next position, no further 
-                 * movement is possible.
-                 */
-                if ( this.getCharAt( this.cur_row, this.cur_col - 1 ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_col--;
-            }
-
-            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_LEFT;
-        }
-
-        return pAmount;
-    }
-
-    public moveUp( pAmount : number ) : number
-    {
-        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_UP;
-
-        for ( let step_count = 0; step_count < pAmount; step_count++ )
-        {
-            /*
-             * Check wrap around in this step.
-             */
-            if ( this.getCharAt( this.cur_row - 1, this.cur_col ) === CHAR_NO_MAP )
-            {
-                let find_index = this.findEndToBottom( this.cur_row, this.cur_col );
-
-                if ( this.getCharAt( find_index, this.cur_col ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_row = find_index;
-            }
-            else 
-            {
-                /*
-                 * If there is a wall in the next position, no further 
-                 * movement is possible.
-                 */
-                if ( this.getCharAt( this.cur_row - 1, this.cur_col ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_row--;
-            }
-
-            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_UP;
-        }
-
-        return pAmount;
-    }
-
-    public moveDown( pAmount : number ) : number
-    {
-        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_DOWN;
-
-        for ( let step_count = 0; step_count < pAmount; step_count++ )
-        {
-            /*
-             * Check wrap around in this step.
-             */
-            if ( this.getCharAt( this.cur_row + 1, this.cur_col ) === CHAR_NO_MAP )
-            {
-                let find_index = this.findEndToTop( this.cur_row, this.cur_col );
-
-                if ( this.getCharAt( find_index, this.cur_col ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_row = find_index;
-            }
-            else 
-            {
-                /*
-                 * If there is a wall in the next position, no further 
-                 * movement is possible.
-                 */
-                if ( this.getCharAt( this.cur_row + 1, this.cur_col ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_row++;
-            }
-
-            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = CHAR_MAP_DOWN;
-        }
-
-        return pAmount;
-    }
 
     public toString() : string 
     {
@@ -553,11 +480,13 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     /*
      * *******************************************************************************************************
-     * Doing the move path
+     * Doing the move path for Part 1
      * *******************************************************************************************************
      */
 
     monkey_map.determineStartPosition();
+
+    monkey_map.determineWrapPositions();
 
     let move_count : number = 0;
 
@@ -575,10 +504,10 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
             wl( "Direction From " + padR( move_direction, 5 ) + " To " + padR( new_move_direction, 5 ) + " Rotation " + cur_char + "  Move Count " + padL(  move_count, 5 ) );
 
-                 if ( move_direction === DIRECTION_RIGHT ) monkey_map.moveRight( move_count );
-            else if ( move_direction === DIRECTION_LEFT  ) monkey_map.moveLeft( move_count );
-            else if ( move_direction === DIRECTION_UP    ) monkey_map.moveUp( move_count );
-            else if ( move_direction === DIRECTION_DOWN  ) monkey_map.moveDown( move_count );
+                 if ( move_direction === DIRECTION_RIGHT ) monkey_map.move( move_count,  0,  1, CHAR_MAP_RIGHT );
+            else if ( move_direction === DIRECTION_LEFT  ) monkey_map.move( move_count,  0, -1, CHAR_MAP_LEFT  );
+            else if ( move_direction === DIRECTION_UP    ) monkey_map.move( move_count, -1,  0, CHAR_MAP_UP    );
+            else if ( move_direction === DIRECTION_DOWN  ) monkey_map.move( move_count,  1,  0, CHAR_MAP_DOWN  );
 
             if ( cur_char !== END_MOVE_PATH ) 
             {
@@ -689,34 +618,6 @@ function getTestArray1() : string[]
     array_test.push( "10R5L5R10L4R5L5" );
 
     return array_test;
-}
-
-
-function testFindMap(): void 
-{
-    let temp_map_string : string = "";
-
-    let map_start_index : number = 0;
-
-    temp_map_string = "A.....  ";
-    map_start_index = findMapRight( temp_map_string );
-
-    wl( "Find Map Right = " + temp_map_string + " " + map_start_index + "  " + temp_map_string.charAt( map_start_index ) );
-
-    temp_map_string = " B..... ";
-    map_start_index = findMapRight( temp_map_string );
-
-    wl( "Find Map Right = " + temp_map_string + " " + map_start_index + "  " + temp_map_string.charAt( map_start_index ) );
-
-    temp_map_string = "   .....C";
-    map_start_index = findMapLeft( temp_map_string );
-
-    wl( "Find Map Left = " + temp_map_string + " " + map_start_index + "  " + temp_map_string.charAt( map_start_index ) );
-
-    temp_map_string = "   ....D ";
-    map_start_index = findMapLeft( temp_map_string );
-
-    wl( "Find Map Left = " + temp_map_string + " " + map_start_index + "  " + temp_map_string.charAt( map_start_index ) );
 }
 
 wl( "" );
