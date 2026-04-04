@@ -6,7 +6,6 @@ import * as readline from 'readline';
  * 
  * https://www.reddit.com/r/adventofcode/comments/zsct8w/2022_day_22_solutions/
  * 
- * 
  * /home/ea234/.nvm/versions/node/v20.16.0/bin/node ./dist/day22/day_22__Monkey_Map.js
  * 
  * Day22 - Monkey Map
@@ -34,84 +33,15 @@ import * as readline from 'readline';
  *  10          .#......      10                        10          .#......
  *  11          ......#.      11                        11          ......#.
  * 
- * Result
+ * Result Part 1
  * Row 6     * 1000 =   6000
  * Col 8     *    4 =     32
  * Dir Right        =      0
  * 
- * Result Part 1 = 6032
- * Result Part 2 = 0
+ * ---------- Part 2 --------------------------------------------------
  * 
- * Day 22 - Ende
+ * Calc Square-Positions
  * 
- * ----------------------------------------------------------------------------
- * 
- * Result
- * Row 64    * 1000 =  64000
- * Col 64    *    4 =    256
- * Dir Right        =      0
- * 
- * Result Part 1 = 64256
- * Result Part 2 = 0
- * 
- * 
- * 
- * ----------------------------------------------------------------------------
- * 
- * Prep-Work Part 2
- * 
- * 
- *           HIJK
- *           G111
- *           F111
- *           E111
- * 
- * VWXY DCBA 4444
- * 2222 3333 4444
- * 2222 3333 4444
- * 2222 3333 4444
- * 
- *           5555 6666
- *           5555 6666
- *           5555 6666
- *           5555 6666
- * 
- * 
-        ...#
-        .#..
-        #...
-        ....
-...# .......#
-.... ....#..A
-..#. ...#....
-1D.. ......#.
-        ...# ..B.
-        .... .#..
-        .#.. ....
-        ..C1 ..#. * 
- * 
- * top    row square 3 - wraps to left col square 1pSquareWidth
- * bottom row square 3 - wraps to left col square 5
- * 
- * top    row square 2 - wraps to top    row square 1
- * bottom row square 2 - wraps to bottom row square 5
- * bottom row square 6 - wraps to left col square 2 
- * 
- * top    row square 6 - wraps to right col square 4
- * right  col square 6 - wraps to right col square 1
- * 
- * 
- * Day22 - Monkey Map
- * 
- * square_3_top_row    4
- * square_3_left_col   4
- * square_3_bottom_row 7
- * square_3_right_col  7
- * 
- * square_1_top_row    0
- * square_1_left_col   8
- * square_1_bottom_row 3
- * square_1_right_col  11
  * square_width        3
  * 
  * square_2_top_row    4
@@ -145,12 +75,12 @@ import * as readline from 'readline';
  * square_1_right_col  11
  * 
  *      01234567890123456789          01234567890123456789
- *   0          1  1               0          0120
- *   1                             1          2  1
- *   2                             2          1  2
- *   3          1  1               3          0  3
+ *   0          1  1               0          0123
+ *   1                             1          2  2
+ *   2                             2          1  1
+ *   3          1  1               3          0  0
  *   4  2  23  34  4               4  32103210   3
- *   5  123412341234               5  2          2
+ *   5                             5  2          2
  *   6                             6  1          1
  *   7  2  23  34  4               7  01233210   0
  *   8          5  56  6           8          0   0120
@@ -162,8 +92,68 @@ import * as readline from 'readline';
  *  14                            14
  *  15                            15
  * 
+ * Direction From Right To Down  Rotation R  Move Count    10
+ * Direction From Down  To Right Rotation L  Move Count     5
+ * Direction From Down  To Left  Rotation R  Move Count     5
+ * Direction From Left  To Down  Rotation L  Move Count    10
+ * Direction From Up    To Right Rotation R  Move Count     4
+ * Direction From Right To Up    Rotation L  Move Count     5
+ * Direction From Up    To Right Rotation E  Move Count     5
+ * 
+ *      0123456789012345          0123456789012345          0123456789012345
+ *   0          ...#           0          >>v            0          >>v#
+ *   1          .#..           1            v            1          .#v.
+ *   2          #...           2            v            2          #.v.
+ *   3          ....           3            v            3          ..v.
+ *   4  ...#.......#           4        ^   v            4  ...#..^...v#
+ *   5  ........#...           5   >>>>>^   >>           5  .>>>>>^.#.>>
+ *   6  ..#....#....           6   ^                     6  .^#....#....
+ *   7  ..........#.           7   ^                     7  .^........#.
+ *   8          ...#....       8                v        8          ...#..v.
+ *   9          .....#..       9                v        9          .....#v.
+ *  10          .#......      10            v<<<<       10          .#v<<<<.
+ *  11          ......#.      11            v           11          ..v...#.
+ * 
+ * Result Part 2
+ * Row 5     * 1000 =   5000
+ * Col 7     *    4 =     28
+ * Dir Up           =      3
+ * 
+ * Result Part 1 = 6032
+ * Result Part 2 = 5031
+ * 
+ * Day 22 - Ende
+
+ * 
+ * ----------------------------------------------------------------------------
+ * 
+ * Prep-Work Part 2
  * 
  * 
+ *           HIJK
+ *           G111
+ *           F111
+ *           E111
+ * 
+ * VWXY DCBA 4444
+ * 2222 3333 4444
+ * 2222 3333 4444
+ * 2222 3333 4444
+ * 
+ *           5555 6666
+ *           5555 6666
+ *           5555 6666
+ *           5555 6666
+ * 
+ * top    row square 3 - wraps to left col square 1pSquareWidth
+ * bottom row square 3 - wraps to left col square 5
+ * 
+ * top    row square 2 - wraps to top    row square 1
+ * bottom row square 2 - wraps to bottom row square 5
+ * bottom row square 6 - wraps to left col square 2 
+ * 
+ * top    row square 6 - wraps to right col square 4
+ * right  col square 6 - wraps to right col square 1
  * 
  */
 
@@ -191,9 +181,9 @@ const VALUE_UP           : number = 3;
 
 const STR_COMBINE_SPACER : string = "     "; 
 
-type Coords = { col : number, row : number, delta_col : number, delta_row : number };
+type Coords       = { col : number, row : number, delta_col : number, delta_row : number };
 
-type PropCoords = Record< string, Coords >;
+type PropCoords   = Record< string, Coords >;
 
 type PropertieMap = Record< string, string >;
 
@@ -319,6 +309,7 @@ function placeDebug( pMap : PropertieMap, pRow1 : number, pCol1 : number, pRow2 
     temp_key = "R" + pRow2 + "C" + pCol2; pMap[ temp_key ] = pChar;
 }
 
+
 function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : PropCoords, pKnzDebug : boolean ) : void 
 {
     let square_width         : number = pSquareWidth;
@@ -374,16 +365,15 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
     let knz_debug_6 : boolean = true;
     let knz_debug_7 : boolean = true;
 
-    knz_debug_1 = false;
-    knz_debug_2 = false;
-    knz_debug_3 = false;
-    knz_debug_4 = false;
-    knz_debug_5 = false;
-    knz_debug_6 = false;
-    //knz_debug_7 = false;
+    // knz_debug_1 = false;
+    // knz_debug_2 = false;
+    // knz_debug_3 = false;
+    // knz_debug_4 = false;
+    // knz_debug_5 = false;
+    // knz_debug_6 = false;
+    // knz_debug_7 = false;
 
-
-    let square_1_row : number = square_3_top_row;
+    let square_1_row       : number = square_3_top_row;
     let square_1_col_start : number = square_3_right_col;
 
     let square_2_col       : number = square_1_left_col;
@@ -408,7 +398,6 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
      * bottom row square 3 - wraps to left col square 5
      */
 
-
     square_1_row = square_3_bottom_row;
     square_1_col_start = square_3_right_col;
 
@@ -426,29 +415,13 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col     ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_row     + "C" + square_1_cur_col ] = { delta_col : 1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_1_row     + "C" + square_1_cur_col ] = { delta_col : 1, delta_row :  0, row : square_2_cur_row, col : square_2_col };
         pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col     ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * top    row square 2 - wraps to top    row square 1
      */
-
-     /*      01234567890123456789          01234567890123456789
- *   0          1  1               0          0120
- *   1                             1          2  1
- *   2                             2          1  2
- *   3          1  1               3          0  3
- *   4  2  23  34  4               4  32103210   3
- *   5  123412341234               5  2          2
- *   6                             6  1          1
- *   7  2  23  34  4               7  01233210   0
- *   8          5  56  6           8          0   0120
- *   9                             9          1      1
- *  10                            10          2      2
- *  11          5  56  6          11          32100123
- *  12                            12
-*/
    
     square_1_row = square_2_top_row;
     square_1_col_start = square_2_right_col;
@@ -467,29 +440,13 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 0, delta_row : 1, row : square_2_row, col : square_2_cur_col };
-        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { delta_col : 0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col ] = { delta_col : 0, delta_row : 1, row : square_2_row, col : square_2_cur_col };
+        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col ] = { delta_col : 0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * bottom row square 2 - wraps to bottom row square 5
      */
-
-  /*      01234567890123456789          01234567890123456789
- *   0          1  1               0          0120
- *   1                             1          2  1
- *   2                             2          1  2
- *   3          1  1               3          0  3
- *   4  2  23  34  4               4  32103210   3
- *   5  123412341234               5  2          2
- *   6                             6  1          1
- *   7  2  23  34  4               7  01233210   0
- *   8          5  56  6           8          0   0120
- *   9                             9          1      1
- *  10                            10          2      2
- *  11          5  56  6          11          32100123
- *  12                            12
-*/    
 
     square_1_row       = square_2_bottom_row;
     square_1_col_start = square_2_left_col;
@@ -508,13 +465,14 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 0, delta_row : -1, row : square_2_row, col : square_2_cur_col };
-        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col ] = { delta_col : 0, delta_row : -1, row : square_2_row, col : square_2_cur_col };
+        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * bottom row square 6 - wraps to left col square 2 
      */
+
     square_1_row       = square_6_bottom_row;
     square_1_col_start = square_6_left_col;
 
@@ -532,16 +490,13 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col ] = { delta_col : 1, delta_row :  0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * top row square 6 - wraps to right col square 4
      */
-
-
-   
  
     square_1_row       = square_6_top_row;
     square_1_col_start = square_6_left_col;
@@ -560,30 +515,13 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col :  0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col ] = { delta_col :  0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * right col square 6 - wraps to right col square 1
      */
-   
- 
-   /*      01234567890123456789          01234567890123456789
- *   0          1  1               0          0120
- *   1                             1          2  1
- *   2                             2          1  2
- *   3          1  1               3          0  3
- *   4  2  23  34  4               4  32103210   3
- *   5  123412341234               5  2          2
- *   6                             6  1          1
- *   7  2  23  34  4               7  01233210   0
- *   8          5  56  6           8          0   0120
- *   9                             9          1      1
- *  10                            10          2      2
- *  11          5  56  6          11          32100123
- *  12                            12
-*/  
    
     let square_1_row_start : number = square_6_top_row;
     let square_1_col : number = square_6_right_col;
@@ -603,13 +541,16 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
             debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
         }
 
-        pWrapPositions[ "R" + square_1_cur_row + "C" + square_1_col  ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col : -1, delta_row : 0, row : square_1_cur_row, col : square_1_col };
+        pWrapPositions[ "R" + square_1_cur_row + "C" + square_1_col ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col ] = { delta_col : -1, delta_row : 0, row : square_1_cur_row, col : square_1_col };
     }
 
     if ( pKnzDebug )
     {
-        wl( "square_width        " + square_width_minus_1         );
+        wl( "" );
+        wl( "Calc Square-Positions" );
+        wl( "" );
+        wl( "square_width        " + square_width_minus_1 );
         wl( "" );
         wl( "square_2_top_row    " + square_2_top_row     );
         wl( "square_2_left_col   " + square_2_left_col    );
@@ -656,6 +597,7 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
 
         wl( "" );
         wl( combineStrings( dbg_map_squares, dbg_map_wrap_p ) );
+        wl( "" );
     }
 }
 
@@ -688,12 +630,12 @@ class MonkeyMap
         this.wrap_positons = {}
     }
 
-    public determineStartPosition() : void 
+    private determineStartPosition() : void 
     {
         this.cur_col = this.findNewStartLeft( this.cur_row );
     }
 
-    public determineWrapPositionsPart1() : void 
+    private determineWrapPositionsPart1() : void 
     {
         /*
          * Line Wrap Row Positions 
@@ -703,8 +645,8 @@ class MonkeyMap
             let cur_col_start = this.findNewStartLeft( cur_row_temp );
             let cur_col_end   = this.findEndToRight( cur_row_temp, cur_col_start );
 
-            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_start  ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_end   };
-            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_end    ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_start };
+            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_start ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_end   };
+            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_end   ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_start };
         }
 
         /*
@@ -720,22 +662,22 @@ class MonkeyMap
         }
     }
 
-    public determineWrapPositionsPart2( pSquareWidth : number, pKnzDebug : boolean ) : void 
+    private determineWrapPositionsPart2( pSquareWidth : number, pKnzDebug : boolean ) : void 
     {
-        determineWrapPositionsCube( 4, this.wrap_positons, pKnzDebug );
+        determineWrapPositionsCube( pSquareWidth, this.wrap_positons, pKnzDebug );
     }
 
-    public getCharAt( pRow : number, pCol : number ) : string 
+    private getCharAt( pRow : number, pCol : number ) : string 
     {
         return this.map_input_str[ "R" + pRow + "C" + pCol ] ?? CHAR_NO_MAP
     }
 
-    public getRow() : number 
+    private getRow() : number 
     {
         return this.cur_row;        
     }
 
-    public getCol() : number 
+    private getCol() : number 
     {
         return this.cur_col;
     }
@@ -750,17 +692,17 @@ class MonkeyMap
         return this.grid_cols;
     }
 
-    public getMapInput() : PropertieMap
+    private getMapInput() : PropertieMap
     {
         return this.map_input_str;
     }
 
-    public getMoveMap() : PropertieMap
+    private getMoveMap() : PropertieMap
     {
         return this.move_map;
     }
 
-    public getCombinedMap() : PropertieMap
+    private getCombinedMap() : PropertieMap
     {
         let combined_map : PropertieMap = {...this.map_input_str};
 
@@ -849,59 +791,7 @@ class MonkeyMap
         return this.wrap_positons[ "R" + pRow + "C" + pCol ] ??  undefined;
     }
 
-    public move( pAmount : number, pDeltaRow : number, pDeltaCol : number, pCharMap : string ) : number
-    {
-        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = pCharMap;
-
-        for ( let step_count = 0; step_count < pAmount; step_count++ )
-        {
-            /*
-             * Check Wrap Around             
-             */
-            if ( this.getCharAt( this.cur_row + pDeltaRow, this.cur_col + pDeltaCol ) === CHAR_NO_MAP )
-            {
-                let wrap_coords = this.getWrapPosition( this.cur_row, this.cur_col );
-
-                if ( wrap_coords === undefined )
-                {
-                    wl( "ERROR - move - no wrap coords found at R" + ( this.cur_row + pDeltaRow ) + "C" + ( this.cur_col + pDeltaCol ) );
-
-                    throw Error( "ERROR - move - no wrap coords found at R" + ( this.cur_row + pDeltaRow ) + "C" + ( this.cur_col + pDeltaCol ) );
-                }
-
-                if ( this.getCharAt( wrap_coords.row, wrap_coords.col ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_col = wrap_coords.col;
-                this.cur_row = wrap_coords.row;
-            }
-            else
-            {
-                /*
-                 * If there is a wall in the next position, no further 
-                 * movement is possible.
-                 */
-                if ( this.getCharAt( this.cur_row + pDeltaRow, this.cur_col + pDeltaCol ) === CHAR_MAP_WALL )
-                {
-                    return step_count;
-                }
-
-                this.cur_col += pDeltaCol;
-                this.cur_row += pDeltaRow;
-            }
-
-            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = pCharMap;
-        }
-
-        return pAmount;
-    }
-
-
-
-
-    public move2( pAmount : number, pDeltaRow : number, pDeltaCol : number, pCharMap : string, pFaceDirection : string  ) : string
+    private move( pAmount : number, pDeltaRow : number, pDeltaCol : number, pCharMap : string, pFaceDirection : string  ) : string
     {
         let delta_row      : number = pDeltaRow;
         let delta_col      : number = pDeltaCol;
@@ -934,14 +824,16 @@ class MonkeyMap
                 this.cur_col = wrap_coords.col;
                 this.cur_row = wrap_coords.row;
 
-                delta_row = wrap_coords.delta_row;
-                delta_col = wrap_coords.delta_col;
+                if ( wrap_coords.delta_col !== -2 )
+                {
+                    delta_row = wrap_coords.delta_row;
+                    delta_col = wrap_coords.delta_col;
 
-
-                     if ( delta_col ===  1 ) { char_map = CHAR_MAP_RIGHT; face_direction = DIRECTION_UP; }
-                else if ( delta_col === -1 ) { char_map = CHAR_MAP_LEFT;  face_direction = DIRECTION_UP; }
-                else if ( delta_row === -1 ) { char_map = CHAR_MAP_UP;    face_direction = DIRECTION_UP; }
-                else if ( delta_row ===  1 ) { char_map = CHAR_MAP_DOWN;  face_direction = DIRECTION_UP; }
+                         if ( delta_col ===  1 ) { char_map = CHAR_MAP_RIGHT; face_direction = DIRECTION_RIGHT; }
+                    else if ( delta_col === -1 ) { char_map = CHAR_MAP_LEFT;  face_direction = DIRECTION_LEFT;  }
+                    else if ( delta_row === -1 ) { char_map = CHAR_MAP_UP;    face_direction = DIRECTION_UP;    }
+                    else if ( delta_row ===  1 ) { char_map = CHAR_MAP_DOWN;  face_direction = DIRECTION_DOWN;  }
+                }
             }
             else
             {
@@ -964,6 +856,86 @@ class MonkeyMap
         return face_direction;
     }
 
+    public startMove( pMovePath : string, pKnzCalcPart1 : boolean, pSquareWidth : number, pKnzDebug : boolean ) : number 
+    {
+        this.reset();
+
+        this.determineStartPosition();
+
+        if ( pKnzCalcPart1 )
+        {
+            this.determineWrapPositionsPart1();
+        }
+        else 
+        {
+            this.determineWrapPositionsPart2( pSquareWidth, true );
+        }
+
+        let move_count : number = 0;
+
+        let move_direction : string = DIRECTION_RIGHT;
+
+        let move_path_string : string = pMovePath;
+
+        for ( let move_path_index : number = 0; move_path_index < move_path_string.length; move_path_index++ )
+        {
+            let cur_char = move_path_string.charAt( move_path_index );
+
+            if ( ( cur_char === ROTATE_LEFT ) || ( cur_char === ROTATE_RIGHT ) || ( cur_char === END_MOVE_PATH ) )
+            {
+                     if ( move_direction === DIRECTION_RIGHT ) move_direction = this.move( move_count,  0,  1, CHAR_MAP_RIGHT, move_direction );
+                else if ( move_direction === DIRECTION_LEFT  ) move_direction = this.move( move_count,  0, -1, CHAR_MAP_LEFT, move_direction  );
+                else if ( move_direction === DIRECTION_UP    ) move_direction = this.move( move_count, -1,  0, CHAR_MAP_UP, move_direction    );
+                else if ( move_direction === DIRECTION_DOWN  ) move_direction = this.move( move_count,  1,  0, CHAR_MAP_DOWN, move_direction  );
+
+                let new_move_direction = getNewDirection( move_direction, cur_char );
+
+                wl( "Direction From " + padR( move_direction, 5 ) + " To " + padR( new_move_direction, 5 ) + " Rotation " + cur_char + "  Move Count " + padL(  move_count, 5 ) );
+
+                if ( cur_char !== END_MOVE_PATH ) 
+                {
+                    move_direction = new_move_direction;
+                    move_count = 0;
+                }
+            }
+            else if ( ( cur_char >= "0" ) && ( cur_char <= "9" ) )
+            {
+                move_count = ( move_count * 10 ) + ( move_path_string.charCodeAt( move_path_index ) - 48 );
+            }
+        }
+
+        if ( pKnzDebug )
+        {
+            let dbg_map_maze = getDebugMap( this.getMapInput(),     0, 0, this.getGridRows(), this.getGridCols() );
+            let dbg_map_move = getDebugMap( this.getMoveMap(),      0, 0, this.getGridRows(), this.getGridCols() );
+            let dbg_map_comb = getDebugMap( this.getCombinedMap(),  0, 0, this.getGridRows(), this.getGridCols() );
+
+            wl( "" );
+            wl( combineStrings( combineStrings( dbg_map_maze, dbg_map_move ), dbg_map_comb ) );
+        }
+
+        /*
+        * *******************************************************************************************************
+        * Calculating the result value for part 1
+        * *******************************************************************************************************
+        */
+
+        let row_end = this.getRow() + 1;
+        let col_end = this.getCol() + 1;
+
+        let result_row       : number = row_end * 1000;
+        let result_col       : number = col_end * 4;
+        let result_direction : number = getDirectionValue( move_direction );
+
+        wl( "" );
+        wl( "Result Part " + ( pKnzCalcPart1 ? "1" : "2" ) );
+        wl( "Row " + padR( row_end, 5 )        + " * 1000 = " + padL( result_row,       6 ) );
+        wl( "Col " + padR( col_end, 5 )        + " *    4 = " + padL( result_col,       6 ) );
+        wl( "Dir " + padR( move_direction, 6 ) + "       = "  + padL( result_direction, 6 ) );
+
+        return result_row + result_col + result_direction;
+    }
+
     public toString() : string 
     {
         return "cur_row " + this.cur_row + "  cur_col " + this.cur_col;
@@ -971,7 +943,7 @@ class MonkeyMap
 }
 
 
-function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void 
+function calcArray( pArray : string[], pSquareWidth : number, pKnzDebug : boolean = true ) : void 
 {
     /*
      * *******************************************************************************************************
@@ -1011,80 +983,22 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
     /*
      * *******************************************************************************************************
-     * Doing the move path for Part 1
+     * Doing the move path for Part 1 and Part 2
      * *******************************************************************************************************
      */
-
-    monkey_map.determineStartPosition();
-
-    //monkey_map.determineWrapPositionsPart1();
-    monkey_map.determineWrapPositionsPart2( 4, true );
-
-    let move_count : number = 0;
-
-    let move_direction : string = DIRECTION_RIGHT;
 
     move_path_string += END_MOVE_PATH;
 
-    for ( let move_path_index : number = 0; move_path_index < move_path_string.length; move_path_index++ )
-    {
-        let cur_char = move_path_string.charAt( move_path_index );
-
-        if ( ( cur_char === ROTATE_LEFT ) || ( cur_char === ROTATE_RIGHT ) || ( cur_char === END_MOVE_PATH ) )
-        {
-
-                 if ( move_direction === DIRECTION_RIGHT ) move_direction = monkey_map.move2( move_count,  0,  1, CHAR_MAP_RIGHT, move_direction );
-            else if ( move_direction === DIRECTION_LEFT  ) move_direction = monkey_map.move2( move_count,  0, -1, CHAR_MAP_LEFT, move_direction  );
-            else if ( move_direction === DIRECTION_UP    ) move_direction = monkey_map.move2( move_count, -1,  0, CHAR_MAP_UP, move_direction    );
-            else if ( move_direction === DIRECTION_DOWN  ) move_direction = monkey_map.move2( move_count,  1,  0, CHAR_MAP_DOWN, move_direction  );
-
-            let new_move_direction = getNewDirection( move_direction, cur_char );
-
-            wl( "Direction From " + padR( move_direction, 5 ) + " To " + padR( new_move_direction, 5 ) + " Rotation " + cur_char + "  Move Count " + padL(  move_count, 5 ) );
-
-            if ( cur_char !== END_MOVE_PATH ) 
-            {
-                move_direction = new_move_direction;
-                move_count = 0;
-            }
-        }
-        else if ( ( cur_char >= "0" ) && ( cur_char <= "9" ) )
-        {
-            move_count = ( move_count * 10 ) + ( move_path_string.charCodeAt( move_path_index ) - 48 );
-        }
-    }
+    result_part_01 = monkey_map.startMove( move_path_string, true, pSquareWidth, pKnzDebug );
 
     if ( pKnzDebug )
     {
-        let dbg_map_maze = getDebugMap( monkey_map.getMapInput(),     0, 0, monkey_map.getGridRows(), monkey_map.getGridCols() );
-        let dbg_map_move = getDebugMap( monkey_map.getMoveMap(),      0, 0, monkey_map.getGridRows(), monkey_map.getGridCols() );
-        let dbg_map_comb = getDebugMap( monkey_map.getCombinedMap(),  0, 0, monkey_map.getGridRows(), monkey_map.getGridCols() );
-
         wl( "" );
-        wl( combineStrings( combineStrings( dbg_map_maze, dbg_map_move ), dbg_map_comb ) );
+        wl( "---------- Part 2 --------------------------------------------------" );
+        wl( "" );
     }
 
-    /*
-     * *******************************************************************************************************
-     * Calculating the result value for part 1
-     * *******************************************************************************************************
-     */
-
-    let row_end = monkey_map.getRow() + 1;
-    let col_end = monkey_map.getCol() + 1;
-
-    let result_row       : number = row_end * 1000;
-    let result_col       : number = col_end * 4;
-    let result_direction : number = getDirectionValue( move_direction );
-
-    wl( "" );
-    wl( "Result" );
-    wl( "Row " + padR( row_end, 5 )        + " * 1000 = " + padL( result_row,       6 ) );
-    wl( "Col " + padR( col_end, 5 )        + " *    4 = " + padL( result_col,       6 ) );
-    wl( "Dir " + padR( move_direction, 6 ) + "       = "  + padL( result_direction, 6 ) );
-
-    result_part_01 = result_row + result_col + result_direction;
-
+    result_part_02 = monkey_map.startMove( move_path_string, false, pSquareWidth, pKnzDebug );
 
     wl( "" );
     wl( "Result Part 1 = " + result_part_01 );
@@ -1121,7 +1035,7 @@ function checkReaddatei() : void
 
         const arrFromFile = await readFileLines();
 
-        calcArray( arrFromFile, false );
+        calcArray( arrFromFile, 50, false );
     } )();
 }
 
@@ -1168,8 +1082,7 @@ function getTestArray2() : string[]
     array_test.push( "        ........" );
     array_test.push( "" );
 
-//    array_test.push( "6R2L5L" );
-    array_test.push( "6R" );
+    array_test.push( "6L3L5R2" );
 
     return array_test;
 }
@@ -1179,33 +1092,13 @@ wl( "" );
 wl( "Day22 - Monkey Map" );
 wl( "" );
 
-calcArray( getTestArray2(), true );
+calcArray( getTestArray1(), 4, true );
 
 //checkReaddatei();
 
-    let wrap_positons : PropCoords   = {};
+//let wrap_positons : PropCoords   = {};
 
 //determineWrapPositionsCube( 4, wrap_positons, true );
-/*
- *         >>v#    
- *         .#v.    
- *         #.v.    
- *         ..v.    
- * ...#..^...v#    
- * .>>>>>^.#.>>    
- * .^#....#....    
- * .^........#.    
- *         ...#..v.
- *         .....#v.
- *         .#v<<<<.
- *         ..v...#.
- * 
- * 
- * the final row is 5, 
- * the final column is 7, 
- * and the final facing is 3, 
- * final password is 1000 * 5 + 4 * 7 + 3 = 5031.
- * 
- */
+
 wl( "" )
 wl( "Day 22 - Ende" );
