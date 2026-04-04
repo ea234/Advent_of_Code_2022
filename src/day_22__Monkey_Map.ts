@@ -76,6 +76,20 @@ import * as readline from 'readline';
  *           5555 6666
  *           5555 6666
  * 
+ * 
+        ...#
+        .#..
+        #...
+        ....
+...# .......#
+.... ....#..A
+..#. ...#....
+1D.. ......#.
+        ...# ..B.
+        .... .#..
+        .#.. ....
+        ..C1 ..#. * 
+ * 
  * top    row square 3 - wraps to left col square 1pSquareWidth
  * bottom row square 3 - wraps to left col square 5
  * 
@@ -177,7 +191,7 @@ const VALUE_UP           : number = 3;
 
 const STR_COMBINE_SPACER : string = "     "; 
 
-type Coords = { col : number, row : number };
+type Coords = { col : number, row : number, delta_col : number, delta_row : number };
 
 type PropCoords = Record< string, Coords >;
 
@@ -346,29 +360,28 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
     let square_1_top_row    : number = square_1_bottom_row - square_width_minus_1;
     let square_1_right_col  : number = square_1_left_col + square_width_minus_1;
 
-
-
-
-/*
-
-*/
-    wl( "square_3_top_row    " + square_3_top_row     );
-    wl( "square_3_left_col   " + square_3_left_col    );
-    wl( "square_3_bottom_row " + square_3_bottom_row  );
-    wl( "square_3_right_col  " + square_3_right_col   );
-    wl( "" );
-    wl( "square_1_top_row    " + square_1_top_row     );
-    wl( "square_1_left_col   " + square_1_left_col    );
-    wl( "square_1_bottom_row " + square_1_bottom_row  );
-    wl( "square_1_right_col  " + square_1_right_col   );
-
-
     let debug_map_cube_wrap : PropertieMap = {};
-
 
     /*
      * top    row square 3 - wraps to left col square 1
      */
+
+    let knz_debug_1 : boolean = true;
+    let knz_debug_2 : boolean = true;
+    let knz_debug_3 : boolean = true;
+    let knz_debug_4 : boolean = true;
+    let knz_debug_5 : boolean = true;
+    let knz_debug_6 : boolean = true;
+    let knz_debug_7 : boolean = true;
+
+    knz_debug_1 = false;
+    knz_debug_2 = false;
+    knz_debug_3 = false;
+    knz_debug_4 = false;
+    knz_debug_5 = false;
+    knz_debug_6 = false;
+    //knz_debug_7 = false;
+
 
     let square_1_row : number = square_3_top_row;
     let square_1_col_start : number = square_3_right_col;
@@ -381,16 +394,20 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col = square_1_col_start - step_count;
         let square_2_cur_row = square_2_row_start - step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row     + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col     ] = "" + step_count;
+        if ( knz_debug_1 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row     + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col     ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row      + "C" + square_1_cur_col ] = { row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row  + "C" + square_2_col     ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row      + "C" + square_1_cur_col ] = { delta_col : 1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row  + "C" + square_2_col     ] = { delta_col : 0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * bottom row square 3 - wraps to left col square 5
      */
+
 
     square_1_row = square_3_bottom_row;
     square_1_col_start = square_3_right_col;
@@ -403,16 +420,36 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col = square_1_col_start - step_count;
         let square_2_cur_row = square_2_row_start + step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row     + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col     ] = "" + step_count;
+        if ( knz_debug_2 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row     + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col     ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row     + "C" + square_1_cur_col ] = { row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col     ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row     + "C" + square_1_cur_col ] = { delta_col : 1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col     ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * top    row square 2 - wraps to top    row square 1
      */
+
+     /*      01234567890123456789          01234567890123456789
+ *   0          1  1               0          0120
+ *   1                             1          2  1
+ *   2                             2          1  2
+ *   3          1  1               3          0  3
+ *   4  2  23  34  4               4  32103210   3
+ *   5  123412341234               5  2          2
+ *   6                             6  1          1
+ *   7  2  23  34  4               7  01233210   0
+ *   8          5  56  6           8          0   0120
+ *   9                             9          1      1
+ *  10                            10          2      2
+ *  11          5  56  6          11          32100123
+ *  12                            12
+*/
+   
     square_1_row = square_2_top_row;
     square_1_col_start = square_2_right_col;
 
@@ -424,16 +461,36 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col = square_1_col_start - step_count;
         let square_2_cur_col = square_2_col_start + step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
+        if ( knz_debug_3 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { row : square_2_row, col : square_2_cur_col };
-        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 0, delta_row : 1, row : square_2_row, col : square_2_cur_col };
+        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { delta_col : 0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * bottom row square 2 - wraps to bottom row square 5
      */
+
+  /*      01234567890123456789          01234567890123456789
+ *   0          1  1               0          0120
+ *   1                             1          2  1
+ *   2                             2          1  2
+ *   3          1  1               3          0  3
+ *   4  2  23  34  4               4  32103210   3
+ *   5  123412341234               5  2          2
+ *   6                             6  1          1
+ *   7  2  23  34  4               7  01233210   0
+ *   8          5  56  6           8          0   0120
+ *   9                             9          1      1
+ *  10                            10          2      2
+ *  11          5  56  6          11          32100123
+ *  12                            12
+*/    
+
     square_1_row       = square_2_bottom_row;
     square_1_col_start = square_2_left_col;
 
@@ -445,11 +502,14 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col = square_1_col_start + step_count;
         let square_2_cur_col = square_2_col_start - step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
+        if ( knz_debug_4 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_row + "C" + square_2_cur_col ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { row : square_2_row, col : square_2_cur_col };
-        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 0, delta_row : -1, row : square_2_row, col : square_2_cur_col };
+        pWrapPositions[ "R" + square_2_row + "C" + square_2_cur_col  ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
@@ -466,16 +526,23 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col : number = square_1_col_start + step_count;
         let square_2_cur_row : number = square_2_row_start - step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        if ( knz_debug_5 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : 1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col : 0, delta_row : -1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * top row square 6 - wraps to right col square 4
      */
+
+
+   
+ 
     square_1_row       = square_6_top_row;
     square_1_col_start = square_6_left_col;
 
@@ -487,32 +554,57 @@ function determineWrapPositionsCube( pSquareWidth : number, pWrapPositions : Pro
         let square_1_cur_col : number = square_1_col_start + step_count;
         let square_2_cur_row : number = square_2_row_start - step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        if ( knz_debug_6 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_row + "C" + square_1_cur_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { row : square_1_row, col : square_1_cur_col };
+        pWrapPositions[ "R" + square_1_row + "C" + square_1_cur_col  ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col :  0, delta_row : 1, row : square_1_row, col : square_1_cur_col };
     }
 
     /*
      * right col square 6 - wraps to right col square 1
      */
+   
+ 
+   /*      01234567890123456789          01234567890123456789
+ *   0          1  1               0          0120
+ *   1                             1          2  1
+ *   2                             2          1  2
+ *   3          1  1               3          0  3
+ *   4  2  23  34  4               4  32103210   3
+ *   5  123412341234               5  2          2
+ *   6                             6  1          1
+ *   7  2  23  34  4               7  01233210   0
+ *   8          5  56  6           8          0   0120
+ *   9                             9          1      1
+ *  10                            10          2      2
+ *  11          5  56  6          11          32100123
+ *  12                            12
+*/  
+   
     let square_1_row_start : number = square_6_top_row;
     let square_1_col : number = square_6_right_col;
 
-    square_2_row_start = square_1_top_row;
+
+    square_2_row_start = square_1_bottom_row;
     square_2_col       = square_1_right_col;
 
     for ( let step_count = 0; step_count < square_width; step_count++ )
     {
         let square_1_cur_row : number = square_1_row_start + step_count;
-        let square_2_cur_row : number = square_2_row_start + step_count;
+        let square_2_cur_row : number = square_2_row_start - step_count;
 
-        debug_map_cube_wrap[ "R" + square_1_cur_row + "C" + square_1_col ] = "" + step_count;
-        debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        if ( knz_debug_7 )
+        {
+            debug_map_cube_wrap[ "R" + square_1_cur_row + "C" + square_1_col ] = "" + step_count;
+            debug_map_cube_wrap[ "R" + square_2_cur_row + "C" + square_2_col ] = "" + step_count;
+        }
 
-        pWrapPositions[ "R" + square_1_cur_row + "C" + square_1_col  ] = { row : square_2_cur_row, col : square_2_col };
-        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { row : square_1_cur_row, col : square_1_col };
+        pWrapPositions[ "R" + square_1_cur_row + "C" + square_1_col  ] = { delta_col : -1, delta_row : 0, row : square_2_cur_row, col : square_2_col };
+        pWrapPositions[ "R" + square_2_cur_row + "C" + square_2_col  ] = { delta_col : -1, delta_row : 0, row : square_1_cur_row, col : square_1_col };
     }
 
     if ( pKnzDebug )
@@ -606,36 +698,32 @@ class MonkeyMap
         /*
          * Line Wrap Row Positions 
          */
-        for ( let cur_row1 = 0; cur_row1 < this.grid_rows; cur_row1++ )
+        for ( let cur_row_temp = 0; cur_row_temp < this.grid_rows; cur_row_temp++ )
         {
-            let cur_col_start = this.findNewStartLeft( cur_row1 );
-            let cur_col_end   = this.findEndToRight( cur_row1, cur_col_start );
+            let cur_col_start = this.findNewStartLeft( cur_row_temp );
+            let cur_col_end   = this.findEndToRight( cur_row_temp, cur_col_start );
 
-            this.wrap_positons[ "R" + cur_row1 + "C" + cur_col_start  ] = { row : cur_row1, col : cur_col_end   };
-            this.wrap_positons[ "R" + cur_row1 + "C" + cur_col_end    ] = { row : cur_row1, col : cur_col_start };
+            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_start  ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_end   };
+            this.wrap_positons[ "R" + cur_row_temp + "C" + cur_col_end    ] = { delta_col : -2, delta_row : -2, row : cur_row_temp, col : cur_col_start };
         }
 
         /*
          * Line Wrap Col Positions 
          */
-        for ( let cur_col1 = 0; cur_col1 < this.grid_rows; cur_col1++ )
+        for ( let cur_col_temp = 0; cur_col_temp < this.grid_rows; cur_col_temp++ )
         {
-            let cur_row_start = this.findNewStartToBottom( cur_col1 );
-            let cur_row_end   = this.findEndToBottom( cur_row_start, cur_col1 );
+            let cur_row_start = this.findNewStartToBottom( cur_col_temp );
+            let cur_row_end   = this.findEndToBottom( cur_row_start, cur_col_temp );
 
-            this.wrap_positons[ "R" + cur_row_start + "C" + cur_col1 ] = { row : cur_row_end,   col : cur_col1 };
-            this.wrap_positons[ "R" + cur_row_end   + "C" + cur_col1 ] = { row : cur_row_start, col : cur_col1 };
+            this.wrap_positons[ "R" + cur_row_start + "C" + cur_col_temp ] = { delta_col : -2, delta_row : -2, row : cur_row_end,   col : cur_col_temp };
+            this.wrap_positons[ "R" + cur_row_end   + "C" + cur_col_temp ] = { delta_col : -2, delta_row : -2, row : cur_row_start, col : cur_col_temp };
         }
     }
-
-
 
     public determineWrapPositionsPart2( pSquareWidth : number, pKnzDebug : boolean ) : void 
     {
         determineWrapPositionsCube( 4, this.wrap_positons, pKnzDebug );
     }
-
-
 
     public getCharAt( pRow : number, pCol : number ) : string 
     {
@@ -730,7 +818,6 @@ class MonkeyMap
         return -1;
     }
 
-
     private findEndToRight( pRow : number, pCol : number ) : number 
     {
         for ( let result_col = pCol; result_col < this.grid_cols; result_col++ )
@@ -812,6 +899,71 @@ class MonkeyMap
     }
 
 
+
+
+    public move2( pAmount : number, pDeltaRow : number, pDeltaCol : number, pCharMap : string, pFaceDirection : string  ) : string
+    {
+        let delta_row      : number = pDeltaRow;
+        let delta_col      : number = pDeltaCol;
+        let char_map       : string = pCharMap;
+        let face_direction : string = pFaceDirection;
+
+        this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = char_map;
+
+        for ( let step_count = 0; step_count < pAmount; step_count++ )
+        {
+            /*
+             * Check Wrap Around             
+             */
+            if ( this.getCharAt( this.cur_row + delta_row, this.cur_col + delta_col ) === CHAR_NO_MAP )
+            {
+                let wrap_coords = this.getWrapPosition( this.cur_row, this.cur_col );
+
+                if ( wrap_coords === undefined )
+                {
+                    wl( "ERROR - move - no wrap coords found at R" + ( this.cur_row + delta_row ) + "C" + ( this.cur_col + delta_col ) );
+
+                    throw Error( "ERROR - move - no wrap coords found at R" + ( this.cur_row + delta_row ) + "C" + ( this.cur_col + delta_col ) );
+                }
+
+                if ( this.getCharAt( wrap_coords.row, wrap_coords.col ) === CHAR_MAP_WALL )
+                {
+                    return face_direction;
+                }
+
+                this.cur_col = wrap_coords.col;
+                this.cur_row = wrap_coords.row;
+
+                delta_row = wrap_coords.delta_row;
+                delta_col = wrap_coords.delta_col;
+
+
+                     if ( delta_col ===  1 ) { char_map = CHAR_MAP_RIGHT; face_direction = DIRECTION_UP; }
+                else if ( delta_col === -1 ) { char_map = CHAR_MAP_LEFT;  face_direction = DIRECTION_UP; }
+                else if ( delta_row === -1 ) { char_map = CHAR_MAP_UP;    face_direction = DIRECTION_UP; }
+                else if ( delta_row ===  1 ) { char_map = CHAR_MAP_DOWN;  face_direction = DIRECTION_UP; }
+            }
+            else
+            {
+                /*
+                 * If there is a wall in the next position, no further 
+                 * movement is possible.
+                 */
+                if ( this.getCharAt( this.cur_row + delta_row, this.cur_col + delta_col ) === CHAR_MAP_WALL )
+                {
+                    return face_direction;
+                }
+
+                this.cur_col += delta_col;
+                this.cur_row += delta_row;
+            }
+
+            this.move_map[ "R" + this.cur_row + "C" + this.cur_col ] = char_map;
+        }
+
+        return face_direction;
+    }
+
     public toString() : string 
     {
         return "cur_row " + this.cur_row + "  cur_col " + this.cur_col;
@@ -880,14 +1032,15 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
 
         if ( ( cur_char === ROTATE_LEFT ) || ( cur_char === ROTATE_RIGHT ) || ( cur_char === END_MOVE_PATH ) )
         {
+
+                 if ( move_direction === DIRECTION_RIGHT ) move_direction = monkey_map.move2( move_count,  0,  1, CHAR_MAP_RIGHT, move_direction );
+            else if ( move_direction === DIRECTION_LEFT  ) move_direction = monkey_map.move2( move_count,  0, -1, CHAR_MAP_LEFT, move_direction  );
+            else if ( move_direction === DIRECTION_UP    ) move_direction = monkey_map.move2( move_count, -1,  0, CHAR_MAP_UP, move_direction    );
+            else if ( move_direction === DIRECTION_DOWN  ) move_direction = monkey_map.move2( move_count,  1,  0, CHAR_MAP_DOWN, move_direction  );
+
             let new_move_direction = getNewDirection( move_direction, cur_char );
 
             wl( "Direction From " + padR( move_direction, 5 ) + " To " + padR( new_move_direction, 5 ) + " Rotation " + cur_char + "  Move Count " + padL(  move_count, 5 ) );
-
-                 if ( move_direction === DIRECTION_RIGHT ) monkey_map.move( move_count,  0,  1, CHAR_MAP_RIGHT );
-            else if ( move_direction === DIRECTION_LEFT  ) monkey_map.move( move_count,  0, -1, CHAR_MAP_LEFT  );
-            else if ( move_direction === DIRECTION_UP    ) monkey_map.move( move_count, -1,  0, CHAR_MAP_UP    );
-            else if ( move_direction === DIRECTION_DOWN  ) monkey_map.move( move_count,  1,  0, CHAR_MAP_DOWN  );
 
             if ( cur_char !== END_MOVE_PATH ) 
             {
@@ -977,10 +1130,6 @@ function getTestArray1() : string[]
 {
     const array_test: string[] = [];
 
-    // array_test.push( "   ....#.....   " );
-    // array_test.push( "   ..........   " );
-
-
     array_test.push( "        ...#" );
     array_test.push( "        .#.." );
     array_test.push( "        #..." );
@@ -1001,11 +1150,36 @@ function getTestArray1() : string[]
 }
 
 
+function getTestArray2() : string[] 
+{
+    const array_test: string[] = [];
+
+    array_test.push( "        ...." );
+    array_test.push( "        ...." );
+    array_test.push( "        ...." );
+    array_test.push( "        ...." );
+    array_test.push( "............" );
+    array_test.push( "............" );
+    array_test.push( "............" );
+    array_test.push( "............" );
+    array_test.push( "        ........" );
+    array_test.push( "        ........" );
+    array_test.push( "        ........" );
+    array_test.push( "        ........" );
+    array_test.push( "" );
+
+//    array_test.push( "6R2L5L" );
+    array_test.push( "6R" );
+
+    return array_test;
+}
+
+
 wl( "" );
 wl( "Day22 - Monkey Map" );
 wl( "" );
 
-calcArray( getTestArray1(), true );
+calcArray( getTestArray2(), true );
 
 //checkReaddatei();
 
