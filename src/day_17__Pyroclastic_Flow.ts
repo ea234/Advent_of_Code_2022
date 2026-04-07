@@ -8,53 +8,47 @@ import * as readline from 'readline';
  * 
  */
 
-let file_string     : string  = "";
-let file_write_on   : boolean = true;
-
 const CHAR_MAP_ROCK   : string = "#";
 const CHAR_MAP_SPACE  : string = ".";
 const CHAR_MAP_WALL   : string = "|";
 const CHAR_MAP_FLOOR  : string = "-";
 
-type Coords       = { col : number, row : number, char : string };
+type Coords       = { col : number, row : number };
 
-type PropCoords   = Record< string, Coords >;
+const EMPTY_COORDS : Coords[] = [ {row: 0, col: 0} ];
 
 type PropertieMap = Record< string, string >;
-
 
 class Day17Shape
 {
     elements : Coords[] = [];
 
-    height : number = 0;
-    width  : number = 0;
+    height   : number = 0;
 
-    constructor ( pCsvShape : string )
+    width    : number = 0;
+
+    constructor ( pElements : Coords[] )
     {
-        const csv_rows = pCsvShape.split( "," );
+        this.elements = pElements;
 
-        this.height = csv_rows.length;
-
-        for ( let cur_row : number = 0; cur_row < this.height; cur_row++ )
+        for ( let coord_obj of pElements )
         {
-            for ( let cur_col : number = 0; cur_col < csv_rows[ cur_row ]!.length; cur_col++ )
+            if ( coord_obj.col > this.width )
             {
+                this.width = coord_obj.col;
+            }
 
-                if ( csv_rows[ cur_row ]!.charAt( cur_col ) == CHAR_MAP_ROCK )
-                {
-                   this.elements.push( { row : cur_row, col : cur_col, char : CHAR_MAP_ROCK } )
-                }
-
-                if ( cur_col > this.height )
-                {
-                    this.width = cur_col;
-                }
+            if ( coord_obj.row > this.height )
+            {
+                this.height = coord_obj.row;
             }
         }
+
+        this.height++;
+        this.width++;
     }
 
-    public getWicth() : number
+    public getWidth() : number
     {
         return this.width;
     }
@@ -76,20 +70,19 @@ class Day17Shape
 
     public draw( pPropM : PropertieMap, pRow : number, pCol : number ) : void 
     {
-        for ( const el_i of this.elements )
+        for ( const coords_inst of this.elements )
         {
-            pPropM[ "R" + ( pRow + el_i.row ) + "C" + ( pCol + el_i.col ) ] = el_i.char;
+            pPropM[ "R" + ( pRow + coords_inst.row ) + "C" + ( pCol + coords_inst.col ) ] = CHAR_MAP_ROCK;
         }
     }
 
     public drawAsNew( pPropM : PropertieMap, pRow : number, pCol : number ) : void 
     {
-        for ( const el_i of this.elements )
+        for ( const coords_inst of this.elements )
         {
-            pPropM[ "R" + ( pRow + el_i.row ) + "C" + ( pCol + el_i.col ) ] = "@";
+            pPropM[ "R" + ( pRow + coords_inst.row ) + "C" + ( pCol + coords_inst.col ) ] = "@";
         }
     }
-
 
     public getElements() : Coords[]
     {
@@ -98,10 +91,8 @@ class Day17Shape
 
     public toString() : string 
     {
-        return "Head ";
+        return "Shape W " + this.width + " H " + this.height;
     }
-
-
 }
 
 
@@ -113,25 +104,31 @@ class ShapeProvider
 
     constructor()
     {
-        let csv_shape_1 = "####";
 
-        let csv_shape_2 = ".#.,###,.#.";
+        /*
+         *    1       2       3      4     5
+         * .......................................
+         * .####......#........#.....#.....##.....
+         * ..........#.#.......#.....#.....##.....
+         * ...........#......###.....#............
+         * ..........................#............
+         * .......................................
+         */
 
-        let csv_shape_3 = "..#,..#,###";
-
-        let csv_shape_4 = "#,#,#,#";
-
-        let csv_shape_5 = "##,##";
-
-        this.shape_vektor.push( new Day17Shape( csv_shape_1 ) );
-        this.shape_vektor.push( new Day17Shape( csv_shape_2 ) );
-        this.shape_vektor.push( new Day17Shape( csv_shape_3 ) );
-        this.shape_vektor.push( new Day17Shape( csv_shape_4 ) );
-        this.shape_vektor.push( new Day17Shape( csv_shape_5 ) );
+        let shape_1_coords : Coords[] = [ {row: 0, col: 0},{row: 0, col: 3},{row: 0, col: 1},{row: 0, col: 2} ];
+        let shape_2_coords : Coords[] = [ {row: 1, col: 0},{row: 1, col: 2},{row: 2, col: 1},{row: 0, col: 1} ];
+        let shape_3_coords : Coords[] = [ {row: 2, col: 0},{row: 2, col: 2},{row: 2, col: 1},{row: 0, col: 2},{row: 1, col: 2} ];
+        let shape_4_coords : Coords[] = [ {row: 3, col: 0},{row: 0, col: 0},{row: 1, col: 0},{row: 2, col: 0} ];
+        let shape_5_coords : Coords[] = [ {row: 1, col: 0},{row: 1, col: 1},{row: 0, col: 0},{row: 0, col: 1} ];
+        
+        this.shape_vektor.push( new Day17Shape( shape_1_coords ) );
+        this.shape_vektor.push( new Day17Shape( shape_2_coords ) );
+        this.shape_vektor.push( new Day17Shape( shape_3_coords ) );
+        this.shape_vektor.push( new Day17Shape( shape_4_coords ) );
+        this.shape_vektor.push( new Day17Shape( shape_5_coords ) );
 
         this.next_shape = this.shape_vektor.length + 1;
     }
-
 
     public getShapeCount() : number 
     {
@@ -143,31 +140,30 @@ class ShapeProvider
         return this.next_shape;
     }
 
-    public debugDrawShapes( pPropM : PropertieMap ) : number  
+    public debugDrawShapes( pPropertieMap : PropertieMap ) : number  
     {
-        let cur_row : number = 0;
+        let cur_col : number = 1;
+        let cur_row : number = 1;
 
-        for ( const day17_i  of this.shape_vektor )
+        for ( const shape_inst  of this.shape_vektor )
         {
-            day17_i.draw( pPropM, cur_row, 2 );
+            shape_inst.draw( pPropertieMap, cur_row, cur_col );
 
-            wl( cur_row + " " + day17_i.getBottom( cur_row ) );
-
-            cur_row = day17_i.getBottom( cur_row ) + 2;
+            cur_col = shape_inst.getRight( cur_col ) + 5;
         }
 
-        return cur_row;
+        return cur_col;
     }
 
     public getMaxShapeHeight() : number  
     {
         let max_height : number = 0;
 
-        for ( const day17_i  of this.shape_vektor )
+        for ( const shape_inst  of this.shape_vektor )
         {
-            if ( day17_i.getHeight() > max_height )
+            if ( shape_inst.getHeight() > max_height )
             {
-                max_height = day17_i.getHeight();
+                max_height = shape_inst.getHeight();
             }
         }
 
@@ -188,35 +184,39 @@ class ShapeProvider
 }
 
 
-
 class Cave
 {
-    shape_provider : ShapeProvider;
+    cur_shape_inst      : Day17Shape = new Day17Shape( EMPTY_COORDS );
 
-    cave_max_h : number = 10;
+    cur_shape_row       : number = 0;
 
-    cave_map : PropertieMap = {};
+    cur_shape_col       : number = 0;
 
-    cave_width : number = 0;
+    shape_provider      : ShapeProvider;
 
-    cave_min_row : number = 0;
+    shape_counter       : number = 0;
 
-    cave_min_dbg_row : number = 0;
+    cave_map            : PropertieMap = {};
 
-    cave_col_left_wall : number = 1;
-    cave_col_right_wall : number = 1;
+    cave_height         : number = 10;
 
-    cur_shape_i : Day17Shape = new Day17Shape( "#," );
+    cave_width          : number = 0;
 
-    cur_shape_row : number = 0;
-    cur_shape_col : number = 0;
+    cave_top_row        : number = 0;
 
-    shape_counter : number = 0;
+    cave_min_dbg_row    : number = 0;
+
+    cave_col_wall_left  : number = 1;
+
+    cave_col_wall_right : number = 1;
+
+    rows_free           : number = 3;
     
-    cur_jet : string = "";
-    jet_idx : number = 0;
+    jet_stream_vector   : number[] = [];
 
-    rows_free : number = 3;
+    jet_stream          : string = "";
+
+    jet_index           : number = 0;
 
     constructor( pShapeProvider : ShapeProvider, pJetStream : string, pCaveWidth : number, pCountRocks : number )
     {
@@ -224,10 +224,14 @@ class Cave
 
         this.cave_width = pCaveWidth;
 
-        this.cur_jet = pJetStream;
+        this.jet_stream = pJetStream;
 
+        for ( let jet_index = 0; jet_index < pJetStream.length; jet_index++ )
+        {
+            this.jet_stream_vector[ jet_index ] = this.jet_stream.charAt( jet_index ) === "<" ? -1 : 1;
+        }
 
-        this.cave_max_h = ( this.shape_provider.getMaxShapeHeight() * ( pCountRocks + 2 ) ) + 2;
+        this.cave_height = ( this.shape_provider.getMaxShapeHeight() * ( pCountRocks + 2 ) ) + 2;
 
         this.reset();
     }
@@ -236,31 +240,31 @@ class Cave
     {
         this.cave_map = {};
 
-        this.cave_col_right_wall = this.cave_col_left_wall + this.cave_width + 1;
+        this.cave_col_wall_right = this.cave_col_wall_left + this.cave_width + 1;
 
-        let ground_level = this.cave_max_h;
+        let ground_level = this.cave_height;
 
         for ( let idx : number = 1; idx <= this.cave_width; idx++ )
         {
-            this.cave_map[ "R" + ground_level + "C" + ( this.cave_col_left_wall + idx ) ] = CHAR_MAP_FLOOR;
+            this.cave_map[ "R" + ground_level + "C" + ( this.cave_col_wall_left + idx ) ] = CHAR_MAP_FLOOR;
         }
 
-        for ( let idx : number = 0; idx < this.cave_max_h; idx++ )
+        for ( let idx : number = 0; idx < this.cave_height; idx++ )
         {
-            this.cave_map[ "R" + idx + "C" + this.cave_col_left_wall  ] = CHAR_MAP_WALL;
-            this.cave_map[ "R" + idx + "C" + this.cave_col_right_wall ] = CHAR_MAP_WALL;
+            this.cave_map[ "R" + idx + "C" + this.cave_col_wall_left  ] = CHAR_MAP_WALL;
+            this.cave_map[ "R" + idx + "C" + this.cave_col_wall_right ] = CHAR_MAP_WALL;
         }
 
-        this.cave_min_row = this.cave_max_h;
+        this.cave_top_row = this.cave_height;
 
-        this.jet_idx = this.cur_jet.length;
+        this.jet_index = this.jet_stream.length;
 
         this.shape_counter = 0;
     }
 
     public getCaveHeight() : number 
     {
-        return this.cave_max_h;
+        return this.cave_height;
     }
     
     public getCaveMap() : PropertieMap
@@ -270,16 +274,14 @@ class Cave
 
     private getJetPushDirection() : number
     {
-        this.jet_idx++;
+        this.jet_index++;
 
-        if ( this.jet_idx >= this.cur_jet.length )
+        if ( this.jet_index >= this.jet_stream.length )
         {
-            this.jet_idx = 0;
+            this.jet_index = 0;
         }
 
-        let col_direction : number = ( this.cur_jet.charAt( this.jet_idx ) === "<" ? -1 : 1 );
-
-        return col_direction;
+        return this.jet_stream_vector[ this.jet_index ]!;
     }
 
     public placeNewShape() 
@@ -292,12 +294,12 @@ class Cave
 
         this.shape_counter++;
 
-        this.cur_shape_i = this.shape_provider.getNextShape();
+        this.cur_shape_inst = this.shape_provider.getNextShape();
 
-        this.cur_shape_row = ( this.cave_min_row - this.rows_free ) - this.cur_shape_i.height;
+        this.cur_shape_row = ( this.cave_top_row - this.rows_free ) - this.cur_shape_inst.height;
 //        this.cur_shape_row = ( this.cave_min_row  ) - this.cur_shape_i.height;
 
-        this.cur_shape_col = this.cave_col_left_wall + 3;
+        this.cur_shape_col = this.cave_col_wall_left + 3;
 
         this.cave_min_dbg_row = this.cur_shape_row;
 
@@ -342,7 +344,7 @@ class Cave
 
         let knz_all_free : boolean = true;
 
-        for ( const coords_cur of this.cur_shape_i.getElements() )
+        for ( const coords_cur of this.cur_shape_inst.getElements() )
         {
             let row_new = this.cur_shape_row + coords_cur.row;
 
@@ -369,17 +371,16 @@ class Cave
 
         let top_row_new : number = this.cur_shape_row + 1;
 
-        for ( const coords_cur of this.cur_shape_i.getElements() )
+        for ( const coords_cur of this.cur_shape_inst.getElements() )
         {
             let row_new = top_row_new + coords_cur.row;
+
             let col_new = this.cur_shape_col + coords_cur.col;
 
             let key_map = "R" + row_new + "C" + col_new;
 
             if ( ( this.cave_map[ key_map ] ?? CHAR_MAP_SPACE ) !== CHAR_MAP_SPACE )
             {
-                //wl(  this.cave_map[ key_map ]! );
-
                 knz_all_free = false;
             }
         }
@@ -390,7 +391,7 @@ class Cave
         }
         else
         {
-            for ( const coords_cur of this.cur_shape_i.getElements() )
+            for ( const coords_cur of this.cur_shape_inst.getElements() )
             {
                 let row_new = this.cur_shape_row + coords_cur.row;
 
@@ -400,9 +401,9 @@ class Cave
 
                 this.cave_map[ key_map ] = CHAR_MAP_ROCK;
 
-                if ( row_new < this.cave_min_row )
+                if ( row_new < this.cave_top_row )
                 {
-                    this.cave_min_row = row_new;
+                    this.cave_top_row = row_new;
                 }
             }
 
@@ -416,13 +417,12 @@ class Cave
 
     public getCaveHeightX()
     {
-        return this.cave_max_h - this.cave_min_row;
+        return this.cave_height - this.cave_top_row;
     }
-
 
     public getCaveMinRow() 
     {
-        return this.cave_min_row;
+        return this.cave_top_row;
     }
 
     public getShapeCounter() : number 
@@ -434,39 +434,16 @@ class Cave
     {
         let dbg_map : PropertieMap = {...this.cave_map};
 
-        this.cur_shape_i.drawAsNew( dbg_map, this.cur_shape_row, this.cur_shape_col );
+        this.cur_shape_inst.drawAsNew( dbg_map, this.cur_shape_row, this.cur_shape_col );
 
-        return getDebugMap( dbg_map, this.cave_min_dbg_row, 0, this.cave_max_h + 1, this.cave_col_left_wall + this.cave_width + 3 );
+        return getDebugMap( dbg_map, this.cave_min_dbg_row, 0, this.cave_height + 1, this.cave_col_wall_left + this.cave_width + 3 );
     }
 }
-
-
-const INDEX_HEAD    : number = 1;
-const INDEX_START   : number = 0;
-
-const STR_COMBINE_SPACER : string = "   "; 
-
 
 
 function wl( pString : string )
 {
     console.log( pString );
-
-    if ( file_write_on )
-    {
-        file_string +="\n" + pString;
-    }
-}
-
-
-function writeFile( pFileName: string, pFileData: string ): void 
-{
-    if ( file_write_on )
-    {
-        fs.writeFile( pFileName, pFileData, { flag: "w" } );
-
-        console.log( "File " + pFileName + " created!" );
-    }
 }
 
 
@@ -496,27 +473,6 @@ function padR( pInput : string | number, pPadRight : number ) : string
 }
 
 
-function combineStrings( pString1 : string | undefined | null, pString2 : string | undefined | null ) : string 
-{
-    const lines1 = ( pString1 != null ? pString1.split(/\r?\n/) : [] );
-    const lines2 = ( pString2 != null ? pString2.split(/\r?\n/) : [] );
-
-    const max_lines = Math.max( lines1.length, lines2.length );
-
-    let result : string[] = [];
-
-    for ( let line_index = 0; line_index < max_lines; line_index++ ) 
-    {
-        const str_a = line_index < lines1.length ? lines1[ line_index ] : "";
-        const str_b = line_index < lines2.length ? lines2[ line_index ] : "";
-
-        result.push( str_a + STR_COMBINE_SPACER + str_b );
-    }
-
-    return result.join("\n");
-}
-
-
 function getDebugMap( pHashMap : PropertieMap, pMinRows : number, pMinCols : number, pMaxRows : number, pMaxCols : number ) : string 
 {
     let str_result : string = "";
@@ -543,25 +499,6 @@ function getDebugMap( pHashMap : PropertieMap, pMinRows : number, pMinCols : num
 }
 
 
-function countTiles( pHashMap : PropertieMap, pMinRows : number, pMinCols : number, pMaxRows : number, pMaxCols : number, pTile : string ) : number
-{
-    let count_tile : number = 0;
-
-    for ( let cur_row = pMinRows; cur_row < pMaxRows; cur_row++ )
-    {
-        for ( let cur_col = pMinCols; cur_col < pMaxCols; cur_col++ )
-        {
-            if ( ( pHashMap[ "R" + cur_row  + "C" + cur_col  ] ?? CHAR_MAP_SPACE ) == pTile )
-            {
-                count_tile++;
-            }
-        }
-    }
-
-    return count_tile;
-}
-
-
 function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void 
 {
     /*
@@ -569,91 +506,55 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
      * Parsing the input Array. Doing the Movings
      * *******************************************************************************************************
      */
-    let start_row        : number = 2;
-    let start_col        : number = 0;
-
     let result_part_01   : number = 0;
     let result_part_02   : number = 0;
 
-    let s_prov : ShapeProvider = new ShapeProvider();
+    let shape_provider : ShapeProvider = new ShapeProvider();
 
-    let shape_map : PropertieMap = {};
+    let shape_map      : PropertieMap = {};
 
-    let dbg_map_l_row : number = s_prov.debugDrawShapes( shape_map );
+    let dbg_map_l_col : number = shape_provider.debugDrawShapes( shape_map );
 
-    let dbg_map_shapes : string = getDebugMap( shape_map, 0, 0, dbg_map_l_row, 10 );
-
-    wl( "" );
-
-//    wl( dbg_map_shapes );
-
-//    let jet_stream = ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>";
-    let jet_stream = pArray[0];
-    let cave_x : Cave = new Cave( s_prov, jet_stream, 7, 2023 );
-
-
-    let dbg_map_shapes1 : string = getDebugMap( cave_x.getCaveMap(), cave_x.getCaveHeight() - 10, 0, cave_x.getCaveHeight() + 1, 10 );
+    let dbg_map_shapes : string = getDebugMap( shape_map, 0, 0, 6, dbg_map_l_col );
 
     wl( "" );
 
-    
-  //  wl( dbg_map_shapes1 );
+    wl( dbg_map_shapes );
 
+    let jet_stream = pArray[0]!;
 
-    cave_x.placeNewShape();
+    let iteration_nr : number = 0;
 
-    wl( cave_x.getDbgMapCurShape() );
+    let cave_inst : Cave = new Cave( shape_provider, jet_stream!, 7, 2023 );
 
-let shape_nr = 0;
+    cave_inst.placeNewShape();
 
-for ( let nrx : number = 0; ( nrx < 200_000_000) && ( cave_x.getShapeCounter() < 2023 ); nrx++ )
-{
-
-    if ( nrx === 11 )
+    while( ( iteration_nr < 200_000_000) && ( cave_inst.getShapeCounter() < 2023 ) )
     {
-        wl( "stop ");
+        cave_inst.doMove(); 
+
+        if ( iteration_nr < 30 )  
+        {
+            wl( "" );
+            wl( "n " + iteration_nr );
+
+            wl( cave_inst.getDbgMapCurShape() );
+        } 
+
+        iteration_nr++;
     }
 
-    if ( cave_x.doMove() === false ) 
-    {
-        shape_nr++;
-    }
-
-    if ( nrx < 30 )  
-    {
-        wl( "" );
-        wl( "n " + nrx );
-
-        wl( cave_x.getDbgMapCurShape() );
-    } 
-}
-
-
-        wl( "" );
-
-        wl( cave_x.getDbgMapCurShape() );
-
-
-wl( "shape_nr " + shape_nr );
-    /*
-     * Two seperate loops for the movements for part 1 and part 2, to prevent 
-     * an entanglement with the debug-output.
-     */
-
     wl( "" );
     wl( "" );
-    wl( " cave_x.getShapeCounter()  " + cave_x.getShapeCounter() );
-    wl( "" );
 
-result_part_01 = cave_x.getCaveHeightX();
-result_part_02 = cave_x.getCaveMinRow();
+    result_part_01 = cave_inst.getCaveHeightX();
+    result_part_02 = cave_inst.getCaveMinRow();
+
     wl( "Result Part 1 = " + result_part_01 );
     wl( "Result Part 2 = " + result_part_02 );
     wl( "" );
     wl( "" );
     wl( "" );
-
-    //writeFile( "/home/ea234/typescript/day09_log_file.txt", file_string );
 }
 
 
@@ -661,7 +562,6 @@ async function readFileLines() : Promise<string[]>
 {
     //const filePath: string = "/home/ea234/typescript/advent_of_code_2022__day09_input.txt";
     const filePath: string = "c:/Daten/aoc2022_d17_input.txt";
-
 
     const lines: string[] = [];
 
@@ -707,26 +607,23 @@ function getTestArray2() : string[]
 {
     const array_test: string[] = [];
 
-array_test.push( "####" );
+    array_test.push( "####" );
 
-array_test.push( ".#." );
-array_test.push( "###" );
-array_test.push( ".#." );
+    array_test.push( ".#." );
+    array_test.push( "###" );
+    array_test.push( ".#." );
 
-array_test.push( "..#" );
-array_test.push( "..#" );
-array_test.push( "###" );
+    array_test.push( "..#" );
+    array_test.push( "..#" );
+    array_test.push( "###" );
 
-array_test.push( "#" );
-array_test.push( "#" );
-array_test.push( "#" );
-array_test.push( "#" );
+    array_test.push( "#" );
+    array_test.push( "#" );
+    array_test.push( "#" );
+    array_test.push( "#" );
 
-array_test.push( "##" );
-array_test.push( "##" );
-
-
-
+    array_test.push( "##" );
+    array_test.push( "##" );
 
     return array_test;
 }
@@ -736,16 +633,9 @@ wl( "" );
 wl( "Day 17 - Pyroclastic Flow" );
 wl( "" );
 
-//calcArray( getTestArray1(), true );
+calcArray( getTestArray1(), true );
 
-checkReaddatei();
+//checkReaddatei();
 
 wl( "" )
-wl( "Day 09 - Ende" );
-
-/*
-
-
-
-
- */
+wl( "Day 17 - Ende" );
