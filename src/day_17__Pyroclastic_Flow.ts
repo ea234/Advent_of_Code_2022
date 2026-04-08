@@ -13,7 +13,7 @@ const CHAR_MAP_SPACE  : string = ".";
 const CHAR_MAP_WALL   : string = "|";
 const CHAR_MAP_FLOOR  : string = "-";
 
-type Coords       = { col : number, row : number };
+type Coords = { col : number, row : number };
 
 const EMPTY_COORDS : Coords[] = [ {row: 0, col: 0} ];
 
@@ -60,7 +60,7 @@ class Day17Shape
 
     public getRight( pCol : number ) : number 
     {
-        return pCol + this.width;
+        return (pCol + this.width) - 1;
     }
 
     public getBottom( pRow : number ) : number
@@ -116,7 +116,7 @@ class ShapeProvider
          */
 
         let shape_1_coords : Coords[] = [ {row: 0, col: 0},{row: 0, col: 3},{row: 0, col: 1},{row: 0, col: 2} ];
-        let shape_2_coords : Coords[] = [ {row: 1, col: 0},{row: 1, col: 2},{row: 2, col: 1},{row: 0, col: 1} ];
+        let shape_2_coords : Coords[] = [ {row: 1, col: 0},{row: 1, col: 2},{row: 2, col: 1},{row: 2, col: 2},{row: 0, col: 1} ];
         let shape_3_coords : Coords[] = [ {row: 2, col: 0},{row: 2, col: 2},{row: 2, col: 1},{row: 0, col: 2},{row: 1, col: 2} ];
         let shape_4_coords : Coords[] = [ {row: 3, col: 0},{row: 0, col: 0},{row: 1, col: 0},{row: 2, col: 0} ];
         let shape_5_coords : Coords[] = [ {row: 1, col: 0},{row: 1, col: 1},{row: 0, col: 0},{row: 0, col: 1} ];
@@ -296,39 +296,40 @@ class Cave
 
         this.cur_shape_inst = this.shape_provider.getNextShape();
 
-        this.cur_shape_row = ( this.cave_top_row - this.rows_free ) - this.cur_shape_inst.height;
-//        this.cur_shape_row = ( this.cave_min_row  ) - this.cur_shape_i.height;
+        this.cur_shape_row = this.cave_top_row - this.cur_shape_inst.height;
 
         this.cur_shape_col = this.cave_col_wall_left + 3;
 
         this.cave_min_dbg_row = this.cur_shape_row;
 
         let left_col_new : number = this.cur_shape_col;
-/*
+
         for ( let jet_push_nr = 0; jet_push_nr < this.rows_free; jet_push_nr++ )
         {
             let col_direction = this.getJetPushDirection();
 
+//            wl( "Direction " + col_direction + "  Shape " + left_col_new + " " + (this.cur_shape_inst.getRight( left_col_new )))
+
             if ( col_direction === -1 )
             {
-                if ( left_col_new <= this.cave_col_left_wall ) 
+//                wl( "shape Left " + ( left_col_new - 1) + " " + this.cave_col_wall_left );
+
+                if ( ( left_col_new - 1 ) > this.cave_col_wall_left ) 
                 {
-                    left_col_new += col_direction;
+                    left_col_new--;
                 }
             }
             else // if ( col_direction === 1 )
             {
-                if ( ( this.cur_shape_i.getRight( left_col_new ) + 1) < this.cave_col_right_wall ) 
+ //               wl( "shape right " + ( this.cur_shape_inst.getRight( left_col_new ) + 1) + " " + this.cave_col_wall_right );
+                if ( ( this.cur_shape_inst.getRight( left_col_new ) + 1) < this.cave_col_wall_right ) 
                 {
                     left_col_new += col_direction;
                 }
             }
         }
 
-  //      this.cur_shape_col = left_col_new;
-
-  
-        */
+        this.cur_shape_col = left_col_new;
     }
 
     public doMove() : boolean
@@ -355,6 +356,8 @@ class Cave
             if ( ( this.cave_map[ key_map ] ?? CHAR_MAP_SPACE ) !== CHAR_MAP_SPACE )
             {
                 knz_all_free = false;
+
+                break;
             }
         }
 
@@ -382,6 +385,8 @@ class Cave
             if ( ( this.cave_map[ key_map ] ?? CHAR_MAP_SPACE ) !== CHAR_MAP_SPACE )
             {
                 knz_all_free = false;
+
+                break;
             }
         }
 
@@ -410,10 +415,8 @@ class Cave
             this.placeNewShape();
         }
 
-
         return knz_all_free === false;
     }
-
 
     public getCaveHeightX()
     {
@@ -437,6 +440,37 @@ class Cave
         this.cur_shape_inst.drawAsNew( dbg_map, this.cur_shape_row, this.cur_shape_col );
 
         return getDebugMap( dbg_map, this.cave_min_dbg_row, 0, this.cave_height + 1, this.cave_col_wall_left + this.cave_width + 3 );
+    }
+
+    public getBinDump( pNrOfRows : number ) : string  
+    {
+        let res_s : string = "";
+
+        for ( let cur_row : number = this.cave_height - pNrOfRows; cur_row <= ( this.cave_height + 3); cur_row++ )
+        {
+            res_s += "  " + cur_row + "  "
+
+            let cur_row_value : number = 0;
+
+            let cur_byte : number = 1;
+
+            for ( let cur_col = this.cave_col_wall_right - 1; cur_col > this.cave_col_wall_left; cur_col-- )
+            {
+                let cur_char : string = this.cave_map[ "R" + cur_row + "C" + cur_col ] ?? CHAR_MAP_SPACE;
+
+                let cur_val : number = ( cur_char == CHAR_MAP_ROCK ) ? 1 : 0;
+
+                res_s += cur_char;
+
+                cur_row_value += cur_val == 1 ? cur_byte : 0;
+
+                cur_byte = cur_byte + 2;
+            }
+
+            res_s += "  " + cur_row_value + "\n";
+        }
+
+        return res_s;
     }
 }
 
@@ -544,16 +578,40 @@ function calcArray( pArray : string[], pKnzDebug : boolean = true ) : void
         iteration_nr++;
     }
 
+/*    wl( "" );
+    cave_inst.reset();
+
+    cave_inst.placeNewShape();
+
+    while( ( iteration_nr < 2_000_000_000) && ( cave_inst.getShapeCounter() < 3000 ) )
+    {
+        cave_inst.doMove(); 
+
+        if ( iteration_nr < 30 )  
+        {
+            wl( "" );
+            wl( "n " + iteration_nr );
+
+            wl( cave_inst.getDbgMapCurShape() );
+        } 
+
+        iteration_nr++;
+    }
+
+  */  
+    wl( "" );
     wl( "" );
     wl( "" );
 
     result_part_01 = cave_inst.getCaveHeightX();
-    result_part_02 = cave_inst.getCaveMinRow();
+    result_part_02 = cave_inst.getCaveHeightX();
 
     wl( "Result Part 1 = " + result_part_01 );
     wl( "Result Part 2 = " + result_part_02 );
     wl( "" );
     wl( "" );
+
+    wl( cave_inst.getBinDump( 200 ) );
     wl( "" );
 }
 
@@ -603,32 +661,6 @@ function getTestArray1() : string[]
 }
 
 
-function getTestArray2() : string[] 
-{
-    const array_test: string[] = [];
-
-    array_test.push( "####" );
-
-    array_test.push( ".#." );
-    array_test.push( "###" );
-    array_test.push( ".#." );
-
-    array_test.push( "..#" );
-    array_test.push( "..#" );
-    array_test.push( "###" );
-
-    array_test.push( "#" );
-    array_test.push( "#" );
-    array_test.push( "#" );
-    array_test.push( "#" );
-
-    array_test.push( "##" );
-    array_test.push( "##" );
-
-    return array_test;
-}
-
-
 wl( "" );
 wl( "Day 17 - Pyroclastic Flow" );
 wl( "" );
@@ -639,3 +671,47 @@ calcArray( getTestArray1(), true );
 
 wl( "" )
 wl( "Day 17 - Ende" );
+
+
+/*
+C:\Program Files\nodejs\node.exe .\dist\day17\day_17__Pyroclastic_Flow.js
+
+Day 17 - Pyroclastic Flow
+
+     012345678901234567890123456789012345678
+  0  .......................................
+  1  .####......#........#.....#.....##.....
+  2  ..........#.#.......#.....#.....##.....
+  3  ...........#......###.....#............
+  4  ..........................#............
+  5  .......................................
+this.cur_shape_col 4
+Direction 1  Shape 4 8
+shape right 9 9
+Direction 1  Shape 4 8
+shape right 9 9
+Direction 1  Shape 4 8
+shape right 9 9
+this.cur_shape_col 4
+Direction -1  Shape 4 7
+shape Left 3 9
+Direction 1  Shape 3 6
+shape right 7 9
+Direction -1  Shape 4 7
+shape Left 3 9
+
+n 0
+     01234567890
+8098  .|..####.|.
+8099  .|.@.@...|.
+8100  .|..@....|.
+8101  .|.####..|.
+8102  ..-------..
+     01234567890
+       |..@@@@.|
+|.......|
+|.......|
+|.......|
++-------
+
+*/
