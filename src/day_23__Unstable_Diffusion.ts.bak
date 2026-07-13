@@ -7,7 +7,7 @@ import * as readline from 'readline';
  * 
  * https://www.reddit.com/r/adventofcode/comments/zt6xz5/2022_day_23_solutions/
  * 
- * https://github.com/ea234/Advent_of_Code_2022/blob/main/src/Day_23__Unstable_Diffusion.ts
+ * 
  * C:\Program Files\nodejs\node.exe .\dist\day23\Day_23_Unstable_Diffusion.js
  * 
  * Day 23: Unstable Diffusion
