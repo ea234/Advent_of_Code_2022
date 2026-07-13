@@ -6,14 +6,16 @@ import * as readline from 'readline';
  * 
  * https://www.reddit.com/r/adventofcode/comments/zli1rd/2022_day_14_solutions/
  * 
- * 
+ * Similar to 
+ * --- AOC 2018 - Day 17: Reservoir Research ---
+ * https://adventofcode.com/2018/day/17
  * 
  */
 
-const CHAR_SAND          : string = "O";
-const CHAR_NO_MAP        : string = " ";
-const CHAR_MAP_AIR       : string = ".";
-const CHAR_MAP_ROCK      : string = "#"; 
+const CHAR_SAND           : string = "O";
+const CHAR_NO_MAP         : string = " ";
+const CHAR_MAP_AIR        : string = ".";
+const CHAR_MAP_ROCK       : string = "#"; 
 const CHAR_MAP_SAND_INPUT : string = "+";
 
 const STR_COMBINE_SPACER : string = "     "; 
